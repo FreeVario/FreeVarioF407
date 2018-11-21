@@ -18,8 +18,6 @@ extern TIM_HandleTypeDef htim6;
 #define FV_DAC_CHANNEL DAC_CHANNEL_1
 #define DACTMRMULTIPLIER 1000000
 
-
-
 const uint16_t sine_wave_array[32] = {2047, 1648, 1264, 910, 600,  345,
         156, 39,  0,  39,  156,  345,
         600, 910, 1264, 1648, 2048, 2447,
