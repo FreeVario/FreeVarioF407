@@ -312,10 +312,11 @@ void StartSensorsTask(void const * argument)
   /* USER CODE BEGIN StartSensorsTask */
 
 	TickType_t times;
-	const TickType_t xDelay = 20; //50hz
+	const TickType_t xDelay = 50; //20hz
 	uint8_t timetosend=1;
 	BMP280_HandleTypedef bmp280;
 	SD_MPU6050 mpu1;
+
 
 	sensors.humidity = 0;
 	sensors.pressure = 0;
@@ -332,11 +333,11 @@ void StartSensorsTask(void const * argument)
 	  readSensorsBMP280(&bmp280);
 	  readSensorsMPU6050(&mpu1);
 
-	  if (timetosend >= 5) { //every 100 ticks
+	  if (timetosend >= 2) { //every 100 ticks
 		  calculateVario100ms();
 	  }
 
-	  if (timetosend >= 10) { //every 200 ticks
+	  if (timetosend >= 4) { //every 200 ticks
 		  timetosend=1;
 		  uint8_t notice[SENDBUFFER];
 		  memset(notice, 0, SENDBUFFER);
@@ -412,7 +413,7 @@ void StartSendDataTask(void const * argument)
 		uint8_t receiveqBuffer[SENDBUFFER];
 
 		xQueueReceive ( uartQueueHandle,&receiveqBuffer,portMAX_DELAY );
-		HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+
 
 		xSendDataNotify = xTaskGetCurrentTaskHandle();
 		HAL_UART_Transmit_DMA(&huart1, (uint8_t *) &receiveqBuffer, SENDBUFFER); //Usart global interupt must be enabled for this to work
@@ -434,14 +435,34 @@ void StartSendDataTask(void const * argument)
 void StartAudioTask(void const * argument)
 {
   /* USER CODE BEGIN StartAudioTask */
-	setupAudio();
+	//testvarss
+
+	float step=0;
+	float t_vario=1;
+	uint32_t times=0;
+	//
+
+	audio_t audiorun;
+	audiorun.multiplier = 2000000;
+	setupAudio(&audiorun);
   /* Infinite loop */
   for(;;)
   {
-		tone(1000);
-	    osDelay(250);
-	   // noTone();
-	    osDelay(250);
+
+	  uint32_t i =xTaskGetTickCount() - times;
+
+	  if (i > 1000) {
+	    times = xTaskGetTickCount();
+	    if(t_vario <= -5) step = 0.1;
+		if(t_vario >= 9) step = -0.1;
+		HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+		t_vario += 0.1;
+	  }
+
+
+	  makeVarioAudio(&audiorun, t_vario);
+
+	    osDelay(10);
   }
   /* USER CODE END StartAudioTask */
 }
