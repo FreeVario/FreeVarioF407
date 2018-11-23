@@ -50,6 +50,11 @@ void noTone() {
 	FV_DACHALTMR->CR1 |= TIM_CR1_CEN;
 }
 
+void toneconstant(audio_t * audio, float freq) {
+	FV_DACHALTMR->ARR = 1/(float)freq * audio->multiplier;
+	FV_DACHALTMR->CR1 |= TIM_CR1_CEN;
+}
+
 //changes tone while beeping
  void dynaTone(audio_t * audio, float freq) {
 	FV_DACHALTMR->ARR = 1/(float)freq * audio->multiplier;
@@ -84,7 +89,7 @@ void noTone() {
     if ( wait < millis()) {
     	audio->toneOn = false;
       //noTone();
-      tone(audio, freq2, intervald);
+      toneconstant(audio, freq2);
       audio->rm = millis();
     }
 
@@ -93,7 +98,7 @@ void noTone() {
 
     if(ndwait < millis()) {
 
-    tone(audio, freq, period);
+    toneconstant(audio, freq);
     audio->toneOn = true;
     audio->tm = millis();
     }
