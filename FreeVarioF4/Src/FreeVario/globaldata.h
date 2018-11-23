@@ -22,6 +22,7 @@
 	int32_t AltitudeMeters; //x1000
 	int32_t VarioMs; //x1000
 	Queue_t  QAltitudeMeters;
+	uint8_t barotakeoff;
 }SensorData;
 
 extern settings_t conf; //declared at fvconf.h. So yes, you must include both files

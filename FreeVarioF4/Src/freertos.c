@@ -154,8 +154,8 @@ void StartGPSTask(void const * argument);
 void StartSendDataTask(void const * argument);
 void StartAudioTask(void const * argument);
 
-extern void MX_USB_HOST_Init(void);
 extern void MX_FATFS_Init(void);
+extern void MX_USB_DEVICE_Init(void);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /**
@@ -226,11 +226,11 @@ void MX_FREERTOS_Init(void) {
 /* USER CODE END Header_StartDefaultTask */
 void StartDefaultTask(void const * argument)
 {
-  /* init code for USB_HOST */
-  MX_USB_HOST_Init();
-
   /* init code for FATFS */
   MX_FATFS_Init();
+
+  /* init code for USB_DEVICE */
+  MX_USB_DEVICE_Init();
 
   /* USER CODE BEGIN StartDefaultTask */
   //BSP_SD_Init();
@@ -312,18 +312,22 @@ void StartSensorsTask(void const * argument)
   /* USER CODE BEGIN StartSensorsTask */
 
 	TickType_t times;
+	TickType_t startTime = xTaskGetTickCount();
 	const TickType_t xDelay = 50; //20hz
 	uint8_t timetosend=1;
 	BMP280_HandleTypedef bmp280;
 	SD_MPU6050 mpu1;
 
 
+
 	sensors.humidity = 0;
 	sensors.pressure = 0;
 	sensors.temperature = 0;
+	sensors.barotakeoff = 0;
 
 	setupReadSensorsBMP280(&bmp280);
 	setupReadSensorsMPU6050(&mpu1);
+	osDelay(100);
 
   /* Infinite loop */
   for(;;)
@@ -333,11 +337,12 @@ void StartSensorsTask(void const * argument)
 	  readSensorsBMP280(&bmp280);
 	  readSensorsMPU6050(&mpu1);
 
-	  if (timetosend >= 2) { //every 100 ticks
+
+	  if ((timetosend >= 2) ) { //every 100 ticks
 		  calculateVario100ms();
 	  }
 
-	  if (timetosend >= 4) { //every 200 ticks
+	  if ((timetosend >= 4) & ((xTaskGetTickCount() - startTime) > STARTDELAY))  { //every 200 ticks
 		  timetosend=1;
 		  uint8_t notice[SENDBUFFER];
 		  memset(notice, 0, SENDBUFFER);
@@ -345,6 +350,18 @@ void StartSensorsTask(void const * argument)
 		  xQueueSendToBack(uartQueueHandle, notice, 10);
 
 	  }
+
+#if defined(TAKEOFFVARIO) && !defined(TESTBUZZER)
+	if ((int)xTaskGetTickCount()  > (STARTDELAY + 4000) && !sensors.barotakeoff) {
+		if (abs(sensors.VarioMs) > TAKEOFFVARIO) {
+			sensors.barotakeoff = true;
+		}
+
+
+	}
+#else
+	sensors.barotakeoff = true;
+#endif
 
 	  vTaskDelayUntil( &times, xDelay );
   }
@@ -437,32 +454,40 @@ void StartAudioTask(void const * argument)
   /* USER CODE BEGIN StartAudioTask */
 	//testvarss
 
-	float step=0;
-	float t_vario=1;
-	uint32_t times=0;
+//    int step=0;
+//	int t_vario=-5000;
+//	uint32_t times=0;
 	//
 
 	audio_t audiorun;
 	audiorun.multiplier = 2000000;
+	uint8_t running=0;
+
 	setupAudio(&audiorun);
   /* Infinite loop */
   for(;;)
   {
 
-	  uint32_t i =xTaskGetTickCount() - times;
-
-	  if (i > 1000) {
-	    times = xTaskGetTickCount();
-	    if(t_vario <= -5) step = 0.1;
-		if(t_vario >= 9) step = -0.1;
-		HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
-		t_vario += 0.1;
+	  if (xTaskGetTickCount()  > STARTDELAY) {
+		  running=1;
 	  }
 
+	 // uint32_t i =xTaskGetTickCount() - times;
 
-	  makeVarioAudio(&audiorun, t_vario);
+//	  if (i > 1000) {
+//	    times = xTaskGetTickCount();
+//	    if(t_vario <= -5000) step = 100;
+//		if(t_vario >= 9000) step = -100;
+//		HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+//		t_vario += step;
+//	  }
+      if (running) {
+		  if(sensors.barotakeoff){
+			  makeVarioAudio(&audiorun, sensors.VarioMs); //flying
+		  }
+      }
 
-	    osDelay(10);
+	    osDelay(2);
   }
   /* USER CODE END StartAudioTask */
 }

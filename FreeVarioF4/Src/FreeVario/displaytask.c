@@ -118,7 +118,7 @@ void displayTaskUpdate(Paint *paint,EPD *epd, unsigned char * frame_buffer) {
     EPD_SetFrameMemory(epd, frame_buffer, 80, 10, Paint_GetWidth(paint), Paint_GetHeight(paint));
 
 
-	intTocharFloat(BmpHumid, sensors.accel_z,1000);
+	intTocharFloat(BmpHumid, sensors.AltitudeMeters,1000);
     Paint_Clear(paint, UNCOLORED);
     Paint_DrawStringAt(paint, 0, 4, BmpHumid, &Font24, COLORED);
     EPD_SetFrameMemory(epd, frame_buffer, 150, 10, Paint_GetWidth(paint), Paint_GetHeight(paint));

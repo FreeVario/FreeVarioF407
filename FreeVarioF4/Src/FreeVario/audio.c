@@ -155,6 +155,7 @@ void toneconstant(audio_t * audio, float freq) {
 //main task to poll
 void makeVarioAudio(audio_t * audio, float vario) {
   int pulse;
+  vario = vario /1000; //TODO: change to int32
   float varioorg = vario;
    noToneTimer(audio);
 
@@ -184,14 +185,14 @@ void makeVarioAudio(audio_t * audio, float vario) {
 
 #endif
 
-  variofr = ((float)(fabs(vario + 1)) * 50 ) + FV_TONEBASE;
+  variofr = ((float)(fabs(vario + 1)) * 150 ) + FV_TONEBASE;
 
   audio->variof = (AUDIOSMOOTH * audio->variof + variofr )/(AUDIOSMOOTH + 1);
 
     if (vario <= BUZZERCLIMBING && vario >= BUZZERZEROCLIMB) { // prethermal audio bip bip bip
 
       if (!audio->muted) {
-         playToneInterval(audio, audio->variof, 100, 400);
+         playToneInterval(audio, audio->variof, 80, 400);
       }
 
     }

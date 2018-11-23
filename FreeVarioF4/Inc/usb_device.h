@@ -1,8 +1,8 @@
 /**
   ******************************************************************************
-  * @file           : usb_host.h
+  * @file           : usb_device.h
   * @version        : v1.0_Cube
-  * @brief          : Header for usb_host.c file.
+  * @brief          : Header for usb_device.c file.
   ******************************************************************************
   * This notice applies to any and all portions of this file
   * that are not between comment pairs USER CODE BEGIN and
@@ -48,8 +48,8 @@
   */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __USB_HOST__H__
-#define __USB_HOST__H__
+#ifndef __USB_DEVICE__H__
+#define __USB_DEVICE__H__
 
 #ifdef __cplusplus
  extern "C" {
@@ -58,46 +58,40 @@
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4xx.h"
 #include "stm32f4xx_hal.h"
+#include "usbd_def.h"
 
 /* USER CODE BEGIN INCLUDE */
 
 /* USER CODE END INCLUDE */
 
-/** @addtogroup USBH_OTG_DRIVER
+/** @addtogroup USBD_OTG_DRIVER
   * @{
   */
 
-/** @defgroup USBH_HOST USBH_HOST
-  * @brief Host file for Usb otg low level driver.
+/** @defgroup USBD_DEVICE USBD_DEVICE
+  * @brief Device file for Usb otg low level driver.
   * @{
   */
 
-/** @defgroup USBH_HOST_Exported_Variables USBH_HOST_Exported_Variables
+/** @defgroup USBD_DEVICE_Exported_Variables USBD_DEVICE_Exported_Variables
   * @brief Public variables.
   * @{
   */
+
+/** USB device core handle. */
+extern USBD_HandleTypeDef hUsbDeviceFS;
 
 /**
   * @}
   */
 
-/** Status of the application. */
-typedef enum {
-  APPLICATION_IDLE = 0,
-  APPLICATION_START,
-  APPLICATION_READY,
-  APPLICATION_DISCONNECT
-}ApplicationTypeDef;
-
-/** @defgroup USBH_HOST_Exported_FunctionsPrototype USBH_HOST_Exported_FunctionsPrototype
-  * @brief Declaration of public functions for Usb host.
+/** @defgroup USBD_DEVICE_Exported_FunctionsPrototype USBD_DEVICE_Exported_FunctionsPrototype
+  * @brief Declaration of public functions for Usb device.
   * @{
   */
 
-/* Exported functions -------------------------------------------------------*/
-
-/** @brief USB Host initialization function. */
-void MX_USB_HOST_Init(void);
+/** USB Device initialization function. */
+void MX_USB_DEVICE_Init(void);
 
 /**
   * @}
@@ -115,6 +109,6 @@ void MX_USB_HOST_Init(void);
 }
 #endif
 
-#endif /* __USB_HOST__H__ */
+#endif /* __USB_DEVICE__H__ */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

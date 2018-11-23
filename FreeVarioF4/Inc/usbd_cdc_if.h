@@ -1,8 +1,8 @@
 /**
   ******************************************************************************
-  * @file           : usbh_conf.h
+  * @file           : usbd_cdc_if.h
   * @version        : v1.0_Cube
-  * @brief          : Header for usbh_conf.c file.
+  * @brief          : Header for usbd_cdc_if.c file.
   ******************************************************************************
   * This notice applies to any and all portions of this file
   * that are not between comment pairs USER CODE BEGIN and
@@ -48,162 +48,94 @@
   */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __USBH_CONF__H__
-#define __USBH_CONF__H__
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#ifndef __USBD_CDC_IF_H__
+#define __USBD_CDC_IF_H__
 
 #ifdef __cplusplus
  extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#include "stm32f4xx.h"
-#include "stm32f4xx_hal.h"
+#include "usbd_cdc.h"
 
 /* USER CODE BEGIN INCLUDE */
 
 /* USER CODE END INCLUDE */
 
-/** @addtogroup USBH_OTG_DRIVER
-  * @brief Driver for Usb host.
+/** @addtogroup STM32_USB_OTG_DEVICE_LIBRARY
+  * @brief For Usb device.
   * @{
   */
+  
+/** @defgroup USBD_CDC_IF USBD_CDC_IF
+  * @brief Usb VCP device module
+  * @{
+  */ 
 
-/** @defgroup USBH_CONF USBH_CONF
-  * @brief Configuration file for Usb otg low level driver.
+/** @defgroup USBD_CDC_IF_Exported_Defines USBD_CDC_IF_Exported_Defines
+  * @brief Defines.
   * @{
   */
+/* USER CODE BEGIN EXPORTED_DEFINES */
 
-/** @defgroup USBH_CONF_Exported_Variables USBH_CONF_Exported_Variables
-  * @brief Public variables.
-  * @{
-  */
+/* USER CODE END EXPORTED_DEFINES */
 
 /**
   * @}
   */
 
-/** @defgroup USBH_CONF_Exported_Defines USBH_CONF_Exported_Defines
-  * @brief Defines for configuration of the Usb host.
-  * @{
-  */
-
-/*
-	MiddleWare name : USB_HOST
-	MiddleWare fileName : usbh_conf.h
-	MiddleWare version : 
-*/
-/*----------   -----------*/
-#define USBH_MAX_NUM_ENDPOINTS      2
- 
-/*----------   -----------*/
-#define USBH_MAX_NUM_INTERFACES      2
- 
-/*----------   -----------*/
-#define USBH_MAX_NUM_CONFIGURATION      1
- 
-/*----------   -----------*/
-#define USBH_KEEP_CFG_DESCRIPTOR      1
- 
-/*----------   -----------*/
-#define USBH_MAX_NUM_SUPPORTED_CLASS      1
- 
-/*----------   -----------*/
-#define USBH_MAX_SIZE_CONFIGURATION      256
- 
-/*----------   -----------*/
-#define USBH_MAX_DATA_BUFFER      512
- 
-/*----------   -----------*/
-#define USBH_DEBUG_LEVEL      0
- 
-/*----------   -----------*/
-#define USBH_USE_OS      1
- 
- 
- 
-
-/****************************************/
-/* #define for FS and HS identification */
-#define HOST_HS 		0
-#define HOST_FS 		1
-
-#if (USBH_USE_OS == 1)
-  #include "cmsis_os.h"
-  #define USBH_PROCESS_PRIO          osPriorityNormal
-  #define USBH_PROCESS_STACK_SIZE    ((uint16_t)128)
-#endif /* (USBH_USE_OS == 1) */
-
-/**
-  * @}
-  */
-
-/** @defgroup USBH_CONF_Exported_Macros USBH_CONF_Exported_Macros
-  * @brief Aliases.
-  * @{
-  */
-
-/* Memory management macros */
-
-/** Alias for memory allocation. */
-#define USBH_malloc         malloc
-
-/** Alias for memory release. */
-#define USBH_free           free
-
-/** Alias for memory set. */
-#define USBH_memset         memset
-
-/** Alias for memory copy. */
-#define USBH_memcpy         memcpy
-
-/* DEBUG macros */
-
-#if (USBH_DEBUG_LEVEL > 0)
-#define USBH_UsrLog(...)    printf(__VA_ARGS__);\
-                            printf("\n");
-#else
-#define USBH_UsrLog(...)
-#endif
-
-#if (USBH_DEBUG_LEVEL > 1)
-
-#define USBH_ErrLog(...)    printf("ERROR: ");\
-                            printf(__VA_ARGS__);\
-                            printf("\n");
-#else
-#define USBH_ErrLog(...)
-#endif
-
-#if (USBH_DEBUG_LEVEL > 2)
-#define USBH_DbgLog(...)    printf("DEBUG : ");\
-                            printf(__VA_ARGS__);\
-                            printf("\n");
-#else
-#define USBH_DbgLog(...)
-#endif
-
-/**
-  * @}
-  */
-
-/** @defgroup USBH_CONF_Exported_Types USBH_CONF_Exported_Types
+/** @defgroup USBD_CDC_IF_Exported_Types USBD_CDC_IF_Exported_Types
   * @brief Types.
   * @{
   */
 
+/* USER CODE BEGIN EXPORTED_TYPES */
+
+/* USER CODE END EXPORTED_TYPES */
+
 /**
   * @}
   */
 
-/** @defgroup USBH_CONF_Exported_FunctionsPrototype USBH_CONF_Exported_FunctionsPrototype
-  * @brief Declaration of public functions for Usb host.
+/** @defgroup USBD_CDC_IF_Exported_Macros USBD_CDC_IF_Exported_Macros
+  * @brief Aliases.
   * @{
   */
 
-/* Exported functions -------------------------------------------------------*/
+/* USER CODE BEGIN EXPORTED_MACRO */
+
+/* USER CODE END EXPORTED_MACRO */
+
+/**
+  * @}
+  */
+
+/** @defgroup USBD_CDC_IF_Exported_Variables USBD_CDC_IF_Exported_Variables
+  * @brief Public variables.
+  * @{
+  */
+
+/** CDC Interface callback. */
+extern USBD_CDC_ItfTypeDef USBD_Interface_fops_FS;
+
+/* USER CODE BEGIN EXPORTED_VARIABLES */
+
+/* USER CODE END EXPORTED_VARIABLES */
+
+/**
+  * @}
+  */
+
+/** @defgroup USBD_CDC_IF_Exported_FunctionsPrototype USBD_CDC_IF_Exported_FunctionsPrototype
+  * @brief Public functions declaration.
+  * @{
+  */
+
+uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len);
+
+/* USER CODE BEGIN EXPORTED_FUNCTIONS */
+
+/* USER CODE END EXPORTED_FUNCTIONS */
 
 /**
   * @}
@@ -221,6 +153,6 @@
 }
 #endif
 
-#endif /* __USBH_CONF__H__ */
+#endif /* __USBD_CDC_IF_H__ */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

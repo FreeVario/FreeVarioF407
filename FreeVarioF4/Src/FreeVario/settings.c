@@ -56,7 +56,7 @@ void getDefaultConfig() {
   conf.xcs = false;
 
   //low pass filter, the higher the number the slower the raw vario reading changes.
-  conf.variosmooth = 20;
+  conf.variosmooth = 5;
 
   // turn vario audio on or off
   conf.buzzer = true;
@@ -79,6 +79,4 @@ void getDefaultConfig() {
   // highest level for conf.variosmooth
   conf.advMaxSmooth = 30;
 
-  // x1000 Glider sink rate
-  conf.gliderSinkRate = -900;
 }

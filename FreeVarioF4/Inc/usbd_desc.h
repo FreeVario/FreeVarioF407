@@ -1,8 +1,8 @@
 /**
   ******************************************************************************
-  * @file            : usb_host.c
-  * @version         : v1.0_Cube
-  * @brief           : This file implements the USB Host
+  * @file           : usbd_desc.h
+  * @version        : v1.0_Cube
+  * @brief          : Header for usbd_conf.c file.
   ******************************************************************************
   * This notice applies to any and all portions of this file
   * that are not between comment pairs USER CODE BEGIN and
@@ -46,100 +46,93 @@
   *
   ******************************************************************************
   */
+/* Define to prevent recursive inclusion -------------------------------------*/
+#ifndef __USBD_DESC__H__
+#define __USBD_DESC__H__
+
+#ifdef __cplusplus
+ extern "C" {
+#endif
 
 /* Includes ------------------------------------------------------------------*/
+#include "usbd_def.h"
 
-#include "usb_host.h"
-#include "usbh_core.h"
-#include "usbh_cdc.h"
+/* USER CODE BEGIN INCLUDE */
 
-/* USER CODE BEGIN Includes */
+/* USER CODE END INCLUDE */
 
-/* USER CODE END Includes */
+/** @addtogroup STM32_USB_OTG_DEVICE_LIBRARY
+  * @{
+  */
 
-/* USER CODE BEGIN PV */
-/* Private variables ---------------------------------------------------------*/
+/** @defgroup USBD_DESC USBD_DESC
+  * @brief Usb device descriptors module.
+  * @{
+  */
 
-/* USER CODE END PV */
+/** @defgroup USBD_DESC_Exported_Defines USBD_DESC_Exported_Defines
+  * @brief Defines.
+  * @{
+  */
 
-/* USER CODE BEGIN PFP */
-/* Private function prototypes -----------------------------------------------*/
+/* USER CODE BEGIN EXPORTED_DEFINES */
 
-/* USER CODE END PFP */
-
-/* USB Host core handle declaration */
-USBH_HandleTypeDef hUsbHostHS;
-ApplicationTypeDef Appli_state = APPLICATION_IDLE;
-
-/*
- * -- Insert your variables declaration here --
- */
-/* USER CODE BEGIN 0 */
-
-/* USER CODE END 0 */
-
-/*
- * user callback declaration
- */
-static void USBH_UserProcess(USBH_HandleTypeDef *phost, uint8_t id);
-
-/*
- * -- Insert your external function declaration here --
- */
-/* USER CODE BEGIN 1 */
-
-/* USER CODE END 1 */
+/* USER CODE END EXPORTED_DEFINES */
 
 /**
-  * Init USB host library, add supported class and start the library
-  * @retval None
+  * @}
   */
-void MX_USB_HOST_Init(void)
-{
-  /* USER CODE BEGIN USB_HOST_Init_PreTreatment */
-  
-  /* USER CODE END USB_HOST_Init_PreTreatment */
-  
-  /* Init host Library, add supported class and start the library. */
-  USBH_Init(&hUsbHostHS, USBH_UserProcess, HOST_HS);
 
-  USBH_RegisterClass(&hUsbHostHS, USBH_CDC_CLASS);
+/** @defgroup USBD_DESC_Exported_TypesDefinitions USBD_DESC_Exported_TypesDefinitions
+  * @brief Types.
+  * @{
+  */
 
-  USBH_Start(&hUsbHostHS);
+/* USER CODE BEGIN EXPORTED_TYPES */
 
-  /* USER CODE BEGIN USB_HOST_Init_PostTreatment */
-  
-  /* USER CODE END USB_HOST_Init_PostTreatment */
-}
+/* USER CODE END EXPORTED_TYPES */
 
-/*
- * user callback definition
- */
-static void USBH_UserProcess  (USBH_HandleTypeDef *phost, uint8_t id)
-{
-  /* USER CODE BEGIN CALL_BACK_1 */
-  switch(id)
-  {
-  case HOST_USER_SELECT_CONFIGURATION:
-  break;
+/**
+  * @}
+  */
 
-  case HOST_USER_DISCONNECTION:
-  Appli_state = APPLICATION_DISCONNECT;
-  break;
+/** @defgroup USBD_DESC_Exported_Macros USBD_DESC_Exported_Macros
+  * @brief Aliases.
+  * @{
+  */
 
-  case HOST_USER_CLASS_ACTIVE:
-  Appli_state = APPLICATION_READY;
-  break;
+/* USER CODE BEGIN EXPORTED_MACRO */
 
-  case HOST_USER_CONNECTION:
-  Appli_state = APPLICATION_START;
-  break;
+/* USER CODE END EXPORTED_MACRO */
 
-  default:
-  break;
-  }
-  /* USER CODE END CALL_BACK_1 */
-}
+/**
+  * @}
+  */
+
+/** @defgroup USBD_DESC_Exported_Variables USBD_DESC_Exported_Variables
+  * @brief Public variables.
+  * @{
+  */
+
+/** Descriptor for the Usb device. */
+extern USBD_DescriptorsTypeDef FS_Desc;
+
+/* USER CODE BEGIN EXPORTED_VARIABLES */
+
+/* USER CODE END EXPORTED_VARIABLES */
+
+/**
+  * @}
+  */
+
+/** @defgroup USBD_DESC_Exported_FunctionsPrototype USBD_DESC_Exported_FunctionsPrototype
+  * @brief Public functions declaration.
+  * @{
+  */
+
+/* USER CODE BEGIN EXPORTED_FUNCTIONS */
+
+/* USER CODE END EXPORTED_FUNCTIONS */
 
 /**
   * @}
@@ -148,5 +141,15 @@ static void USBH_UserProcess  (USBH_HandleTypeDef *phost, uint8_t id)
 /**
   * @}
   */
+
+/**
+  * @}
+  */
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* __USBD_DESC__H__ */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
