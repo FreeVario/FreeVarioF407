@@ -31,6 +31,7 @@ typedef struct{
 void setupAudio(audio_t * audio);
 void makeVarioAudio(audio_t * audio,float vario);
 void tone(audio_t * audio, float freq, int period);
+void toneconstant(audio_t * audio, float freq);
 void noTone();
 int millis();
 void playTonePause(audio_t * audio,int freq, int nbeeps, int tpause);
