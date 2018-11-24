@@ -11,10 +11,14 @@
 
 #ifndef SETTINGS_H_
 #define SETTINGS_H_
+#include "FreeRTOS.h"
+#include "cmsis_os.h"
 #include "stdbool.h"
+#include <stdlib.h>
 
 void getDefaultConfig();
 void setupConfig();
+
 
 typedef struct {
   int eepromSaveVersion;

@@ -80,3 +80,8 @@ void getDefaultConfig() {
   conf.advMaxSmooth = 30;
 
 }
+
+
+
+
+

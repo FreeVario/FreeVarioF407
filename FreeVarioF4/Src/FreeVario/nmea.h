@@ -12,16 +12,13 @@
 #define NMEA_H_
 #include "../fvconfig.h"
 
-void NMEA_setPTAS1(double vario, double varioAv, double altitude);
-void NMEA_setnmeaShortLXWP0(float varioAlt, float varioMts);
-void NMEA_setNmeaLK8EX1(int rawPressure, int varioAlt, float climbRate, int temperature, int pbat);
-void NMEA_setNmeaPcProbe(float aax, float aay, float aaz, float temperature, float humidity, uint8_t batPers, uint8_t charging);
-void getCRC(char *buff);
-char *dtostrf (float val, signed char width, unsigned char prec, char *sout);
+void NMEA_getPTAS1(uint8_t * buffer, int32_t vario, int32_t varioAv, int32_t altitude);
+void NMEA_getnmeaShortLXWP0(uint8_t * buffer, int32_t varioAlt, int32_t varioMts);
+void  NMEA_getNmeaLK8EX1(uint8_t * buffer, int32_t rawPressure, int32_t varioAlt, int32_t climbRate, int32_t temperature, int32_t pbat);
+void NMEA_getNmeaPcProbe(uint8_t * buffer,int16_t aax, int16_t aay, int16_t aaz, int16_t temperature, int16_t humidity, uint8_t batPers, uint8_t charging);
+void getCRC(char * buff);
+void appendCharNum(char * buff, int32_t value, uint16_t div, uint8_t type);
 
-char nmeaVarioLXWP0[60];
-char nmeaVarioLK8EX1[44];
-char nmeaPTAS1[44];
-char nmeaPcProbe[60];
+
 
 #endif /* NMEA_H_ */

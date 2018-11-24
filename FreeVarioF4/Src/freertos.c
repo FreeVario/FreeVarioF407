@@ -64,6 +64,8 @@
 #include <sd_hal_mpu6050.h>
 #include "gps.h"
 #include <string.h>
+#include "nmea.h"
+#include "usbd_cdc_if.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -346,7 +348,10 @@ void StartSensorsTask(void const * argument)
 		  timetosend=1;
 		  uint8_t notice[SENDBUFFER];
 		  memset(notice, 0, SENDBUFFER);
-		  sprintf(notice,"----------ACCL_X:%d--------------------\r\n", sensors.accel_x);
+		  NMEA_getPTAS1(notice, sensors.VarioMs, sensors.VarioMs, sensors.AltitudeMeters);
+		  NMEA_getnmeaShortLXWP0(notice, sensors.AltitudeMeters, sensors.VarioMs);
+		  NMEA_getNmeaLK8EX1(notice, sensors.pressure, sensors.AltitudeMeters, sensors.VarioMs, sensors.temperature, 8000);
+		  NMEA_getNmeaPcProbe(notice, sensors.accel_x, sensors.accel_y,sensors.accel_z, sensors.temperature, sensors.humidity, 100,0);
 		  xQueueSendToBack(uartQueueHandle, notice, 10);
 
 	  }
@@ -406,7 +411,7 @@ void StartGPSTask(void const * argument)
 
 		uint8_t notice[SENDBUFFER];
 		memset(notice, 0, SENDBUFFER);
-		sprintf(notice, "----------GPS:%d --------------------\r\n", hgps.fix_mode);
+
 		xQueueSendToBack(uartQueueHandle, notice, 10);
 	}
   /* USER CODE END StartGPSTask */
@@ -433,8 +438,8 @@ void StartSendDataTask(void const * argument)
 
 
 		xSendDataNotify = xTaskGetCurrentTaskHandle();
-		HAL_UART_Transmit_DMA(&huart1, (uint8_t *) &receiveqBuffer, SENDBUFFER); //Usart global interupt must be enabled for this to work
-
+		HAL_UART_Transmit_DMA(&huart1, (uint8_t *) &receiveqBuffer, strlen((char *)receiveqBuffer)); //Usart global interupt must be enabled for this to work
+		CDC_Transmit_FS((uint8_t *) &receiveqBuffer, strlen((char *)receiveqBuffer));
 		ulTaskNotifyTake( pdTRUE, xMaxBlockTime);
 
 		osDelay(1);

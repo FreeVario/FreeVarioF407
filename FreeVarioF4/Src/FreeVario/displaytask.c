@@ -76,19 +76,6 @@ void displayTaskSetup(Paint *paint,EPD *epd,unsigned char * frame_buffer) {
 
 }
 
-//char array, the value, divide by amount (1000)
-void intTocharFloat(char *buffer, int value, uint16_t div){
-
-	int fpart;
-	uint16_t bpart;
-
-    char *tmpSign = (value < 0) ? "-" : " ";
-    fpart = abs(value)/div;
-    bpart = abs(value) % div;
-    sprintf(buffer,"%s%d.%02u",tmpSign,fpart,bpart);
-
-}
-
 void displayTaskUpdate(Paint *paint,EPD *epd, unsigned char * frame_buffer) {
 	char BmpPressure[11];
 	char BmpHumid[9];
@@ -125,6 +112,20 @@ void displayTaskUpdate(Paint *paint,EPD *epd, unsigned char * frame_buffer) {
 
 
     EPD_DisplayFrame(epd);
+
+
+}
+
+//char array, the value, divide by amount (1000)
+void intTocharFloat(char *buffer, int value, uint16_t div){
+
+	int fpart;
+	uint16_t bpart;
+
+    char *tmpSign = (value < 0) ? "-" : " ";
+    fpart = abs(value)/div;
+    bpart = abs(value) % div;
+    sprintf(buffer,"%s%d.%02u",tmpSign,fpart,bpart);
 
 
 }

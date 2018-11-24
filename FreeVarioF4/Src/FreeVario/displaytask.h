@@ -17,15 +17,16 @@
 #include "epdif.h"
 #include "epdpaint.h"
 #include "imagedata.h"
+#include "../fvconfig.h"
 #include <stdlib.h>
 #include <globaldata.h>
 
 extern SensorData sensors;
 
 //TODO: Fix compiler warning
-void intTocharFloat(char *buffer, int value, uint16_t div);
+
 void displayTaskSetup(Paint *paint,EPD *epd, unsigned char *frame_buffer);
 void displayTaskUpdate( Paint *paint,EPD *epd,unsigned char *frame_buffer);
-
+void intTocharFloat(char *buffer, int value, uint16_t div);
 
 #endif /* DISPLAYTASK_H_ */
