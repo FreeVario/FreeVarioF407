@@ -1,5 +1,5 @@
 /**
- *  @filename   :   epd1in54b.c
+ *  @filename   :   epd2in9.c
  *  @brief      :   Implements for e-paper library
  *  @author     :   Yehui from Waveshare
  *
@@ -25,7 +25,7 @@
  */
 
 #include <stdlib.h>
-#include "epd1in54.h"
+#include "epd2in9.h"
 #include "epdif.h"
 
 int EPD_Init(EPD* epd, const unsigned char* lut) {
@@ -103,15 +103,6 @@ void EPD_SendData(EPD* epd, unsigned char data) {
   EpdSpiTransferCallback(data);
 }
 
-
-/**
- *  @brief: basic function for sending data in DMA
- */
-void EPD_SendDataDMA(EPD* epd, unsigned char data) {
-  EPD_DigitalWrite(epd, epd->dc_pin, HIGH);
-  EpdSpiTransferCallbackDMA(data);
-}
-
 /**
  *  @brief: Wait until the busy_pin goes LOW
  */
@@ -172,20 +163,11 @@ void EPD_SetFrameMemory(
   EPD_SetMemoryPointer(epd, x, y);
   EPD_SendCommand(epd, WRITE_RAM);
   /* send the image data */
-
-  //unsigned char * image_buffer2 = malloc(x * y);
-
- // int z=0;
-
   for (int j = 0; j < y_end - y + 1; j++) {
     for (int i = 0; i < (x_end - x + 1) / 8; i++) {
       EPD_SendData(epd, image_buffer[i + j * (image_width / 8)]);
-      //image_buffer2[z] = image_buffer[i + j * (image_width / 8)];
-      //z++;
     }
   }
-
-  //EPD_SendDataDMA(epd,image_buffer2);
 }
 
 /**

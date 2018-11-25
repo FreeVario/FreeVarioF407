@@ -185,7 +185,7 @@ void makeVarioAudio(audio_t * audio, float vario) {
 
 #endif
 
-  variofr = ((float)(fabs(vario + 1)) * 150 ) + FV_TONEBASE;
+  variofr = ((float)(fabs(vario + 1)) * 200 ) + FV_TONEBASE;
 
   audio->variof = (AUDIOSMOOTH * audio->variof + variofr )/(AUDIOSMOOTH + 1);
 

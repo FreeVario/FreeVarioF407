@@ -1,51 +1,51 @@
 /* USER CODE BEGIN Header */
 /**
-  ******************************************************************************
-  * File Name          : freertos.c
-  * Description        : Code for freertos applications
-  ******************************************************************************
-  * This notice applies to any and all portions of this file
-  * that are not between comment pairs USER CODE BEGIN and
-  * USER CODE END. Other portions of this file, whether 
-  * inserted by the user or by software development tools
-  * are owned by their respective copyright owners.
-  *
-  * Copyright (c) 2018 STMicroelectronics International N.V. 
-  * All rights reserved.
-  *
-  * Redistribution and use in source and binary forms, with or without 
-  * modification, are permitted, provided that the following conditions are met:
-  *
-  * 1. Redistribution of source code must retain the above copyright notice, 
-  *    this list of conditions and the following disclaimer.
-  * 2. Redistributions in binary form must reproduce the above copyright notice,
-  *    this list of conditions and the following disclaimer in the documentation
-  *    and/or other materials provided with the distribution.
-  * 3. Neither the name of STMicroelectronics nor the names of other 
-  *    contributors to this software may be used to endorse or promote products 
-  *    derived from this software without specific written permission.
-  * 4. This software, including modifications and/or derivative works of this 
-  *    software, must execute solely and exclusively on microcontroller or
-  *    microprocessor devices manufactured by or for STMicroelectronics.
-  * 5. Redistribution and use of this software other than as permitted under 
-  *    this license is void and will automatically terminate your rights under 
-  *    this license. 
-  *
-  * THIS SOFTWARE IS PROVIDED BY STMICROELECTRONICS AND CONTRIBUTORS "AS IS" 
-  * AND ANY EXPRESS, IMPLIED OR STATUTORY WARRANTIES, INCLUDING, BUT NOT 
-  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A 
-  * PARTICULAR PURPOSE AND NON-INFRINGEMENT OF THIRD PARTY INTELLECTUAL PROPERTY
-  * RIGHTS ARE DISCLAIMED TO THE FULLEST EXTENT PERMITTED BY LAW. IN NO EVENT 
-  * SHALL STMICROELECTRONICS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-  * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-  * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, 
-  * OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
-  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
-  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
-  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * File Name          : freertos.c
+ * Description        : Code for freertos applications
+ ******************************************************************************
+ * This notice applies to any and all portions of this file
+ * that are not between comment pairs USER CODE BEGIN and
+ * USER CODE END. Other portions of this file, whether
+ * inserted by the user or by software development tools
+ * are owned by their respective copyright owners.
+ *
+ * Copyright (c) 2018 STMicroelectronics International N.V.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted, provided that the following conditions are met:
+ *
+ * 1. Redistribution of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ * 3. Neither the name of STMicroelectronics nor the names of other
+ *    contributors to this software may be used to endorse or promote products
+ *    derived from this software without specific written permission.
+ * 4. This software, including modifications and/or derivative works of this
+ *    software, must execute solely and exclusively on microcontroller or
+ *    microprocessor devices manufactured by or for STMicroelectronics.
+ * 5. Redistribution and use of this software other than as permitted under
+ *    this license is void and will automatically terminate your rights under
+ *    this license.
+ *
+ * THIS SOFTWARE IS PROVIDED BY STMICROELECTRONICS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS, IMPLIED OR STATUTORY WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+ * PARTICULAR PURPOSE AND NON-INFRINGEMENT OF THIRD PARTY INTELLECTUAL PROPERTY
+ * RIGHTS ARE DISCLAIMED TO THE FULLEST EXTENT PERMITTED BY LAW. IN NO EVENT
+ * SHALL STMICROELECTRONICS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+ * OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+ * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ ******************************************************************************
+ */
 /* USER CODE END Header */
 
 /* Includes ------------------------------------------------------------------*/
@@ -90,15 +90,18 @@ QueueHandle_t uartQueueHandle;
 
 /* FV CCM memory allocation-----------------------------------------------------*/
 unsigned char * frame_buffer[EPD_WIDTH * EPD_HEIGHT / 8] __attribute__((section(".ccmram")));
+Paint  paint __attribute__((section(".ccmram")));
 SensorData sensors __attribute__((section(".ccmram")));
-gps_t hgps __attribute__((section(".ccmram")));
+gps_t  hgps __attribute__((section(".ccmram")));
+settings_t conf __attribute__((section(".ccmram")));
+uint8_t nmeasendbuffer[SENDBUFFER] __attribute__((section(".ccmram")));
 /*-----------------------------------------------------------------------------*/
 TaskHandle_t xTaskToNotify = NULL;
 TaskHandle_t xSendDataNotify = NULL;
 extern UART_HandleTypeDef huart1;
 extern UART_HandleTypeDef huart3;
-extern char SDPath[4];   /* SD logical drive path */
-extern FATFS SDFatFS;    /* File system object for SD logical drive */
+extern char SDPath[4]; /* SD logical drive path */
+extern FATFS SDFatFS; /* File system object for SD logical drive */
 
 /* USER CODE END Variables */
 osThreadId defaultTaskHandle;
@@ -111,39 +114,33 @@ osThreadId audioTaskHandle;
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
 
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *UartHandle)
-{
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *UartHandle) {
 
 	//memcpy(&transferBuffer, &receiveBuffer, GPSDMAHALFBUFFER);
 	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-	vTaskNotifyGiveFromISR( xTaskToNotify, &xHigherPriorityTaskWoken );
+	vTaskNotifyGiveFromISR(xTaskToNotify, &xHigherPriorityTaskWoken);
 
 	xTaskToNotify = NULL;
-    portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
-
+	portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 
 }
 
-
 void HAL_UART_RxIdleCallback(UART_HandleTypeDef *UartHandle) {
-	 __HAL_UART_DISABLE_IT(UartHandle, UART_IT_IDLE);
+	__HAL_UART_DISABLE_IT(UartHandle, UART_IT_IDLE);
 
 	//	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 	//	vTaskNotifyGiveFromISR( xTaskToNotify, &xHigherPriorityTaskWoken );
 	//	xTaskToNotify = NULL;
 	//    portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
 
-
 }
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *UartHandle) {
 
-
-		BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-		vTaskNotifyGiveFromISR( xSendDataNotify, &xHigherPriorityTaskWoken );
-		xSendDataNotify = NULL;
-	    portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
-
+	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+	vTaskNotifyGiveFromISR(xSendDataNotify, &xHigherPriorityTaskWoken);
+	xSendDataNotify = NULL;
+	portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 
 }
 
@@ -167,19 +164,19 @@ void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
   */
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
-       
+
   /* USER CODE END Init */
 
   /* USER CODE BEGIN RTOS_MUTEX */
-  /* add mutexes, ... */
+	/* add mutexes, ... */
   /* USER CODE END RTOS_MUTEX */
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
-  /* add semaphores, ... */
+	/* add semaphores, ... */
   /* USER CODE END RTOS_SEMAPHORES */
 
   /* USER CODE BEGIN RTOS_TIMERS */
-  /* start timers, add new ones, ... */
+	/* start timers, add new ones, ... */
   /* USER CODE END RTOS_TIMERS */
 
   /* Create the thread(s) */
@@ -208,23 +205,22 @@ void MX_FREERTOS_Init(void) {
   audioTaskHandle = osThreadCreate(osThread(audioTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
-  /* add threads, ... */
+	/* add threads, ... */
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_QUEUES */
-  /* add queues, ... */
+	/* add queues, ... */
 
-
-  uartQueueHandle = xQueueCreate( 4, SENDBUFFER );
+	uartQueueHandle = xQueueCreate(4, SENDBUFFER);
   /* USER CODE END RTOS_QUEUES */
 }
 
 /* USER CODE BEGIN Header_StartDefaultTask */
 /**
-  * @brief  Function implementing the defaultTask thread.
-  * @param  argument: Not used 
-  * @retval None
-  */
+ * @brief  Function implementing the defaultTask thread.
+ * @param  argument: Not used
+ * @retval None
+ */
 /* USER CODE END Header_StartDefaultTask */
 void StartDefaultTask(void const * argument)
 {
@@ -235,16 +231,16 @@ void StartDefaultTask(void const * argument)
   MX_USB_DEVICE_Init();
 
   /* USER CODE BEGIN StartDefaultTask */
-  //BSP_SD_Init();
-  setupConfig();
-  FIL MyFile;
+	//BSP_SD_Init();
+	setupConfig();
+	FIL MyFile;
 
-  if (f_mount(&SDFatFS, SDPath, 0)== FR_OK){
+	if (f_mount(&SDFatFS, SDPath, 0) == FR_OK) {
 
-	  uint8_t wtext[] = "This is STM32 working with FatFs\r\n";
-	  FRESULT res;
-	  uint32_t byteswritten;
-	  if (f_open(&MyFile, "STM32.TXT", FA_CREATE_ALWAYS | FA_WRITE)
+		uint8_t wtext[] = "This is STM32 working with FatFs\r\n";
+		FRESULT res;
+		uint32_t byteswritten;
+		if (f_open(&MyFile, "STM32.TXT", FA_CREATE_ALWAYS | FA_WRITE)
 				!= FR_OK) {
 			/* 'STM32.TXT' file Open for write Error */
 			//Error_Handler();
@@ -263,51 +259,48 @@ void StartDefaultTask(void const * argument)
 			}
 
 		}
-	//  f_mount(0, "0:", 1);
-  }
+		//  f_mount(0, "0:", 1);
+	}
 
+	/* Infinite loop */
+	for (;;) {
 
-
-  /* Infinite loop */
-  for(;;)
-  {
-
-    osDelay(500);
-  }
+		osDelay(500);
+	}
   /* USER CODE END StartDefaultTask */
 }
 
 /* USER CODE BEGIN Header_StartDisplayTask */
 /**
-* @brief Function implementing the displayTask thread.
-* @param argument: Not used
-* @retval None
-*/
+ * @brief Function implementing the displayTask thread.
+ * @param argument: Not used
+ * @retval None
+ */
 /* USER CODE END Header_StartDisplayTask */
 void StartDisplayTask(void const * argument)
 {
   /* USER CODE BEGIN StartDisplayTask */
 	//unsigned char * frame_buffer = (unsigned char*)malloc(EPD_WIDTH * EPD_HEIGHT / 8);
 	memset(frame_buffer , 0, EPD_WIDTH * EPD_HEIGHT / 8);
-	Paint paint;
-	EPD epd;
-	displayTaskSetup(&paint,&epd, &frame_buffer);
 
-  /* Infinite loop */
-  for(;;)
-  {
-	  displayTaskUpdate(&paint,&epd,&frame_buffer);
-	  osDelay(500);
-  }
+		EPD epd;
+		displayTaskSetup(&paint,&epd, frame_buffer);
+
+
+	/* Infinite loop */
+	for (;;) {
+		 displayTaskUpdate(&paint,&epd,frame_buffer);
+		osDelay(500);
+	}
   /* USER CODE END StartDisplayTask */
 }
 
 /* USER CODE BEGIN Header_StartSensorsTask */
 /**
-* @brief Function implementing the sensorsTask thread.
-* @param argument: Not used
-* @retval None
-*/
+ * @brief Function implementing the sensorsTask thread.
+ * @param argument: Not used
+ * @retval None
+ */
 /* USER CODE END Header_StartSensorsTask */
 void StartSensorsTask(void const * argument)
 {
@@ -316,11 +309,9 @@ void StartSensorsTask(void const * argument)
 	TickType_t times;
 	TickType_t startTime = xTaskGetTickCount();
 	const TickType_t xDelay = 50; //20hz
-	uint8_t timetosend=1;
+	uint8_t timetosend = 1;
 	BMP280_HandleTypedef bmp280;
 	SD_MPU6050 mpu1;
-
-
 
 	sensors.humidity = 0;
 	sensors.pressure = 0;
@@ -331,64 +322,67 @@ void StartSensorsTask(void const * argument)
 	setupReadSensorsMPU6050(&mpu1);
 	osDelay(100);
 
-  /* Infinite loop */
-  for(;;)
-  {
-	  times = xTaskGetTickCount();
-	  timetosend++;
-	  readSensorsBMP280(&bmp280);
-	  readSensorsMPU6050(&mpu1);
+	/* Infinite loop */
+	for (;;) {
+		times = xTaskGetTickCount();
+		timetosend++;
+		readSensorsBMP280(&bmp280);
+		readSensorsMPU6050(&mpu1);
 
-
-	  if ((timetosend >= 2) ) { //every 100 ticks
-		  calculateVario100ms();
-	  }
-
-	  if ((timetosend >= 4) & ((xTaskGetTickCount() - startTime) > STARTDELAY))  { //every 200 ticks
-		  timetosend=1;
-		  uint8_t notice[SENDBUFFER];
-		  memset(notice, 0, SENDBUFFER);
-		  NMEA_getPTAS1(notice, sensors.VarioMs, sensors.VarioMs, sensors.AltitudeMeters);
-		  NMEA_getnmeaShortLXWP0(notice, sensors.AltitudeMeters, sensors.VarioMs);
-		  NMEA_getNmeaLK8EX1(notice, sensors.pressure, sensors.AltitudeMeters, sensors.VarioMs, sensors.temperature, 8000);
-		  NMEA_getNmeaPcProbe(notice, sensors.accel_x, sensors.accel_y,sensors.accel_z, sensors.temperature, sensors.humidity, 100,0);
-		  xQueueSendToBack(uartQueueHandle, notice, 10);
-
-	  }
-
-#if defined(TAKEOFFVARIO) && !defined(TESTBUZZER)
-	if ((int)xTaskGetTickCount()  > (STARTDELAY + 4000) && !sensors.barotakeoff) {
-		if (abs(sensors.VarioMs) > TAKEOFFVARIO) {
-			sensors.barotakeoff = true;
+		if ((timetosend >= 2)) { //every 100 ticks
+			calculateVario100ms();
 		}
 
+		if ((timetosend >= 4)
+				& ((xTaskGetTickCount() - startTime) > STARTDELAY)) { //every 200 ticks
+			timetosend = 1;
 
-	}
+			memset(nmeasendbuffer, 0, SENDBUFFER);
+			NMEA_getPTAS1(nmeasendbuffer, sensors.VarioMs, sensors.VarioMs,
+					sensors.AltitudeMeters);
+			NMEA_getnmeaShortLXWP0(nmeasendbuffer, sensors.AltitudeMeters,
+					sensors.VarioMs);
+			NMEA_getNmeaLK8EX1(nmeasendbuffer, sensors.pressure, sensors.AltitudeMeters,
+					sensors.VarioMs, sensors.temperature, 8000);
+			NMEA_getNmeaPcProbe(nmeasendbuffer, sensors.accel_x, sensors.accel_y,
+					sensors.accel_z, sensors.temperature, sensors.humidity, 100,
+					0);
+			xQueueSendToBack(uartQueueHandle, nmeasendbuffer, 10);
+
+		}
+
+#if defined(TAKEOFFVARIO) && !defined(TESTBUZZER)
+		if ((int) xTaskGetTickCount() > (STARTDELAY + 4000)
+				&& !sensors.barotakeoff) {
+			if (abs(sensors.VarioMs) > TAKEOFFVARIO) {
+				sensors.barotakeoff = true;
+			}
+
+		}
 #else
-	sensors.barotakeoff = true;
+		sensors.barotakeoff = true;
 #endif
 
-	  vTaskDelayUntil( &times, xDelay );
-  }
+		vTaskDelayUntil(&times, xDelay);
+	}
   /* USER CODE END StartSensorsTask */
 }
 
 /* USER CODE BEGIN Header_StartGPSTask */
 /**
-* @brief Function implementing the gpsTask thread.
-* @param argument: Not used
-* @retval None
-*/
+ * @brief Function implementing the gpsTask thread.
+ * @param argument: Not used
+ * @retval None
+ */
 /* USER CODE END Header_StartGPSTask */
 void StartGPSTask(void const * argument)
 {
   /* USER CODE BEGIN StartGPSTask */
 	gps_init(&hgps);
-	uint8_t buffer[SENDBUFFER];// __attribute__((section(".ccmram")));
+	uint8_t buffer[SENDBUFFER]; //DMA buffer can't use ccm
 	uint8_t rcvdCount;
 	configASSERT(xTaskToNotify == NULL);
 	__HAL_UART_ENABLE_IT(&huart3, UART_IT_IDLE);
-
 
 	/* Infinite loop */
 	for (;;) {
@@ -405,22 +399,17 @@ void StartGPSTask(void const * argument)
 		rcvdCount = sizeof(buffer) - huart3.hdmarx->Instance->NDTR;
 		HAL_UART_DMAStop(&huart3);
 
-
 		gps_process(&hgps, buffer, rcvdCount);
 		xQueueSendToBack(uartQueueHandle, buffer, 10);
 
-		uint8_t notice[SENDBUFFER];
-		memset(notice, 0, SENDBUFFER);
-
-		xQueueSendToBack(uartQueueHandle, notice, 10);
 	}
   /* USER CODE END StartGPSTask */
 }
 
 /* USER CODE BEGIN Header_StartSendDataTask */
 /**
-* @brief Function implementing the sendDataTask thread.
-* @param argument: Not used
+ * @brief Function implementing the sendDataTask thread.
+ * @param argument: Not used
  * @retval None
  */
 /* USER CODE END Header_StartSendDataTask */
@@ -434,12 +423,14 @@ void StartSendDataTask(void const * argument)
 	for (;;) {
 		uint8_t receiveqBuffer[SENDBUFFER];
 
-		xQueueReceive ( uartQueueHandle,&receiveqBuffer,portMAX_DELAY );
-
+		xQueueReceive(uartQueueHandle, &receiveqBuffer, portMAX_DELAY);
+		uint16_t buffsize = strlen((char *) receiveqBuffer);
 
 		xSendDataNotify = xTaskGetCurrentTaskHandle();
-		HAL_UART_Transmit_DMA(&huart1, (uint8_t *) &receiveqBuffer, strlen((char *)receiveqBuffer)); //Usart global interupt must be enabled for this to work
-		CDC_Transmit_FS((uint8_t *) &receiveqBuffer, strlen((char *)receiveqBuffer));
+
+		HAL_UART_Transmit_DMA(&huart1, (uint8_t *) &receiveqBuffer, buffsize); //Usart global interupt must be enabled for this to work
+		CDC_Transmit_FS((uint8_t *) &receiveqBuffer, buffsize);
+		HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
 		ulTaskNotifyTake( pdTRUE, xMaxBlockTime);
 
 		osDelay(1);
@@ -449,35 +440,32 @@ void StartSendDataTask(void const * argument)
 
 /* USER CODE BEGIN Header_StartAudioTask */
 /**
-* @brief Function implementing the audioTask thread.
-* @param argument: Not used
-* @retval None
-*/
+ * @brief Function implementing the audioTask thread.
+ * @param argument: Not used
+ * @retval None
+ */
 /* USER CODE END Header_StartAudioTask */
 void StartAudioTask(void const * argument)
 {
   /* USER CODE BEGIN StartAudioTask */
 	//testvarss
-
 //    int step=0;
 //	int t_vario=-5000;
 //	uint32_t times=0;
 	//
-
 	audio_t audiorun;
 	audiorun.multiplier = 2000000;
-	uint8_t running=0;
+	uint8_t running = 0;
 
 	setupAudio(&audiorun);
-  /* Infinite loop */
-  for(;;)
-  {
+	/* Infinite loop */
+	for (;;) {
 
-	  if (xTaskGetTickCount()  > STARTDELAY) {
-		  running=1;
-	  }
+		if (xTaskGetTickCount() > STARTDELAY) {
+			running = 1;
+		}
 
-	 // uint32_t i =xTaskGetTickCount() - times;
+		// uint32_t i =xTaskGetTickCount() - times;
 
 //	  if (i > 1000) {
 //	    times = xTaskGetTickCount();
@@ -486,20 +474,20 @@ void StartAudioTask(void const * argument)
 //		HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
 //		t_vario += step;
 //	  }
-      if (running) {
-		  if(sensors.barotakeoff){
-			  makeVarioAudio(&audiorun, sensors.VarioMs); //flying
-		  }
-      }
+		if (running) {
+			if (sensors.barotakeoff) {
+				makeVarioAudio(&audiorun, sensors.VarioMs); //flying
+			}
+		}
 
-	    osDelay(2);
-  }
+		osDelay(10);
+	}
   /* USER CODE END StartAudioTask */
 }
 
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
-     
+
 /* USER CODE END Application */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

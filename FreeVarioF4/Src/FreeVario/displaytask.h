@@ -13,7 +13,7 @@
 
 #include "FreeRTOS.h"
 #include "cmsis_os.h"
-#include "epd1in54.h"
+#include "epd2in9.h"
 #include "epdif.h"
 #include "epdpaint.h"
 #include "imagedata.h"
@@ -25,8 +25,8 @@ extern SensorData sensors;
 
 //TODO: Fix compiler warning
 
-void displayTaskSetup(Paint *paint,EPD *epd, unsigned char *frame_buffer);
-void displayTaskUpdate( Paint *paint,EPD *epd,unsigned char *frame_buffer);
-void intTocharFloat(char *buffer, int value, uint16_t div);
+void displayTaskSetup(Paint *paint, EPD *epd, unsigned char * frame_buffer);
+void displayTaskUpdate( Paint *paint,EPD *epd, unsigned char * frame_buffer);
+void intTocharFloat(char *buffer, int value, uint16_t div, uint16_t dif);
 
 #endif /* DISPLAYTASK_H_ */

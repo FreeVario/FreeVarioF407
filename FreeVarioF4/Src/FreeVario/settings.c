@@ -56,7 +56,7 @@ void getDefaultConfig() {
   conf.xcs = false;
 
   //low pass filter, the higher the number the slower the raw vario reading changes.
-  conf.variosmooth = 5;
+  conf.variosmooth = 10;
 
   // turn vario audio on or off
   conf.buzzer = true;

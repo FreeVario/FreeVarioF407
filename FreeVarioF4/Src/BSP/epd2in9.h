@@ -1,6 +1,6 @@
 /**
- *  @filename   :   epd1in54.h
- *  @brief      :   Header file for e-paper library epd1in54.c
+ *  @filename   :   epd2in9.h
+ *  @brief      :   Header file for e-paper library epd2in9.c
  *  @author     :   Yehui from Waveshare
  *  
  *  Copyright (C) Waveshare     September 12 2017
@@ -24,16 +24,16 @@
  * THE SOFTWARE.
  */
 
-#ifndef EPD1IN54_H
-#define EPD1IN54_H
+#ifndef EPD2IN9_H
+#define EPD2IN9_H
 
 #include "fonts.h"
 
 // Display resolution
-#define EPD_WIDTH       200
-#define EPD_HEIGHT      200
+#define EPD_WIDTH       128
+#define EPD_HEIGHT      296
 
-// EPD1IN54 commands
+// EPD2IN9 commands
 #define DRIVER_OUTPUT_CONTROL                       0x01
 #define BOOSTER_SOFT_START_CONTROL                  0x0C
 #define GATE_SCAN_START_POSITION                    0x0F
@@ -73,7 +73,6 @@ typedef struct EPD_t {
 /* public functions */
 int  EPD_Init(EPD* epd, const unsigned char* lut);
 void EPD_SendCommand(EPD* epd, unsigned char command);
-void EPD_SendDataDMA(EPD* epd, unsigned char data);
 void EPD_SendData(EPD* epd, unsigned char data);
 void EPD_WaitUntilIdle(EPD* epd);
 void EPD_Reset(EPD* epd);
@@ -97,6 +96,6 @@ static void EPD_SetLut(EPD* epd, const unsigned char* lut);
 static void EPD_SetMemoryArea(EPD* epd, int x_start, int y_start, int x_end, int y_end);
 static void EPD_SetMemoryPointer(EPD* epd, int x, int y);
 
-#endif /* EPD1IN54_H */
+#endif /* EPD2IN9_H */
 
 /* END OF FILE */

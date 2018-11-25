@@ -25,7 +25,7 @@
 #define FV_LED_GPIO	GPIOE
 
 //Audio baseline for buzzer
-#define FV_TONEBASE 600
+#define FV_TONEBASE 800
 
 // Master I2C channel
 /* Use this for the Baro and ACCL sensor

@@ -50,5 +50,5 @@ void EpdDigitalWriteCallback(int pin, int value);
 int  EpdDigitalReadCallback(int pin);
 void EpdDelayMsCallback(unsigned int delaytime);
 void EpdSpiTransferCallback(unsigned char data);
-void EpdSpiTransferCallbackDMA(unsigned char data);
+
 #endif /* EPDIF_H */

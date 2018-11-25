@@ -69,21 +69,13 @@ int EpdDigitalReadCallback(int pin_num) {
 }
 
 void EpdDelayMsCallback(unsigned int delaytime) {
-	osDelay(delaytime);
+  osDelay(delaytime);
 }
 
 void EpdSpiTransferCallback(unsigned char data) {
   HAL_GPIO_WritePin((GPIO_TypeDef*)pins[CS_PIN].port, pins[CS_PIN].pin, GPIO_PIN_RESET);
   HAL_SPI_Transmit(&hspi1, &data, 1, 1000);
   HAL_GPIO_WritePin((GPIO_TypeDef*)pins[CS_PIN].port, pins[CS_PIN].pin, GPIO_PIN_SET);
-}
-
-void EpdSpiTransferCallbackDMA(unsigned char  data) {
-  HAL_GPIO_WritePin((GPIO_TypeDef*)pins[CS_PIN].port, pins[CS_PIN].pin, GPIO_PIN_RESET);
-  //HAL_SPI_Transmit(&hspi1, &data, 1, 1000);
-  //Use DAM to shave some time
-  HAL_SPI_Transmit_DMA(&hspi1, &data, sizeof(&data)); //Spi global interrupt must be enabled for this to work
-  //global spi interrupt should set the pin
 }
 
 int EpdInitCallback(void) {

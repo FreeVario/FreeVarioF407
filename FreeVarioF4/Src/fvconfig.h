@@ -18,7 +18,7 @@
 #include "settings.h"
 #include "stackops.h"
 
-settings_t conf;
+
 
 
 //#define SETUPBT
@@ -29,7 +29,7 @@ settings_t conf;
 
 #define STARTDELAY 6000 //the time delay before the process starts
 #define TAKEOFFVARIO 800 //0.4 //abs vario level to detect takeoff
-#define BUZZERZEROCLIMB -0.15 // Normal sink rate for glider is -0.9 m/s. At this value up to 0 m/s a "blip" sound is made
+#define BUZZERZEROCLIMB -0.2 // Normal sink rate for glider is -0.9 m/s. At this value up to 0 m/s a "blip" sound is made
 //#define BUZZERSTARTUPSOUND // beep when starting up
 #define BUZZER //enble the buzzer function
 #define BUZZSINKALERT -2 //Alert if sinking harder than normal (not sink alarm)
