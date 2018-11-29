@@ -3,7 +3,6 @@
 /Drivers/
 /.settings/
 /FreeVarioF4.elf.launch
-/FreeVarioF4.ioc
 /STM32F407VE_FLASH.ld
 # Object files
 *.o
