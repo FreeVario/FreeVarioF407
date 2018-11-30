@@ -20,7 +20,6 @@
 
 
 
-
 //#define SETUPBT
 
 #define NOOTGDELAY //Don't delay the OTG cable (this way some devices won't see it as a powerbank)
