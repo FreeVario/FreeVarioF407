@@ -13,7 +13,7 @@
 #include "settings.h"
 
 void setupConfig(){
-	HAL_FLASH_
+
 
 #if defined(CONFIGOPT)
 
@@ -32,7 +32,7 @@ void getDefaultConfig() {
   conf.qnePressure = 101325;
 
   // X 1000 Level to sound sink alarm
-  conf.sinkAlarmLevel = -4000;
+  conf.sinkAlarmLevel = -5000;
 
   //send data via serial port
   conf.SerialOut = true;
@@ -60,7 +60,7 @@ void getDefaultConfig() {
   conf.xcs = false;
 
   //low pass filter, the higher the number the slower the raw vario reading changes.
-  conf.variosmooth = 10;
+  conf.variosmooth = 20;
 
   // turn vario audio on or off
   conf.buzzer = true;

@@ -36,7 +36,7 @@
 #define BUZZERVARIOSTOP 10000 //time vario STOP making noise when climbrate 0 m/s
 //#define OUTOFTHERMALBUZZT 3000 //time buzzer goes buuhhhhh
 #define SOARDETECTION 30000 // if climbrate is constant for set milliseconds at 0 m/s the buzzer is muted
-#define BUZZERCLIMBING 0 // vario level to start giving climbing signal
+#define BUZZERCLIMBING 0.1 // vario level to start giving climbing signal
 #define AUDIOSMOOTH 10 //smooth out audio changes
 #define ADAPTIVEVARIO //Adapts the vario low pass filter
 

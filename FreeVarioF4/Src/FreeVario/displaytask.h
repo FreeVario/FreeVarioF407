@@ -16,7 +16,7 @@
 #include "epd2in9.h"
 #include "epdif.h"
 #include "epdpaint.h"
-#include "imagedata.h"
+
 #include "../fvconfig.h"
 #include <stdlib.h>
 #include <globaldata.h>
