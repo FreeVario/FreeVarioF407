@@ -13,7 +13,11 @@
 #include "settings.h"
 
 void setupConfig(){
+	HAL_FLASH_
+
 #if defined(CONFIGOPT)
+
+
 
 #else
   getDefaultConfig();
