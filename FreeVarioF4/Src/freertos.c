@@ -102,7 +102,7 @@ extern UART_HandleTypeDef huart1;
 extern UART_HandleTypeDef huart3;
 extern char SDPath[4]; /* SD logical drive path */
 extern FATFS SDFatFS; /* File system object for SD logical drive */
-
+__IO uint8_t UserPowerButton = 0;
 /* USER CODE END Variables */
 osThreadId defaultTaskHandle;
 osThreadId displayTaskHandle;
@@ -142,7 +142,62 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *UartHandle) {
 	xSendDataNotify = NULL;
 	portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 
+
 }
+
+/**
+ * @brief EXTI line detection callbacks
+ * @param GPIO_Pin: Specifies the pins connected EXTI line
+ * @retval None
+ */
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
+	if (GPIO_Pin == PWRBUTTON_Pin) {
+		/* Set the variable: button pressed */
+		if (HAL_GetTick() > 5000) {
+			UserPowerButton = 1;
+		}
+	}
+
+}
+
+
+/**
+  * @brief  This function configures the system to enter Standby mode for
+  *         current consumption measurement purpose.
+  *         STANDBY Mode
+  *         ============
+  *           - Backup SRAM and RTC OFF
+  *           - IWDG and LSI OFF
+  *           - Wakeup using WakeUp Pin (PA.00)
+  * @param  None
+  * @retval None
+  */
+void StandbyMode(void)
+{
+  /* Enable Power Clock*/
+  __HAL_RCC_PWR_CLK_ENABLE();
+
+  /* Allow access to Backup */
+  HAL_PWR_EnableBkUpAccess();
+
+  /* Reset RTC Domain */
+  __HAL_RCC_BACKUPRESET_FORCE();
+  __HAL_RCC_BACKUPRESET_RELEASE();
+
+  /* Disable all used wakeup sources: Pin1(PA.0) */
+  HAL_PWR_DisableWakeUpPin(PWR_WAKEUP_PIN1);
+
+  /* Clear all related wakeup flags */
+  __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
+
+  /* Re-enable all used wakeup sources: Pin1(PA.0) */
+  HAL_PWR_EnableWakeUpPin(PWR_WAKEUP_PIN1);
+
+  /* Request to enter STANDBY mode  */
+  HAL_PWR_EnterSTANDBYMode();
+}
+
+
 
 /* USER CODE END FunctionPrototypes */
 
@@ -264,8 +319,16 @@ void StartDefaultTask(void const * argument)
 
 	/* Infinite loop */
 	for (;;) {
+		if  (UserPowerButton) {
+			UserPowerButton = 0;
+			while(HAL_GPIO_ReadPin(PWRBUTTON_GPIO_Port,PWRBUTTON_Pin) == GPIO_PIN_SET) { //wait for button to be released
+			}
+			//TODO: set shutdown message
+			osDelay(4000);
+			StandbyMode();
+		}
 
-		osDelay(500);
+		osDelay(100);
 	}
   /* USER CODE END StartDefaultTask */
 }

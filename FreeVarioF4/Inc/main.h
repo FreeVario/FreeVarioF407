@@ -60,6 +60,12 @@
 
 /* Private define ------------------------------------------------------------*/
 
+#define PWRBUTTON_Pin GPIO_PIN_0
+#define PWRBUTTON_GPIO_Port GPIOA
+#define PWRBUTTON_EXTI_IRQn EXTI0_IRQn
+#define OPTBUTTON_Pin GPIO_PIN_6
+#define OPTBUTTON_GPIO_Port GPIOC
+#define OPTBUTTON_EXTI_IRQn EXTI9_5_IRQn
 #define SPI_CS_Pin GPIO_PIN_4
 #define SPI_CS_GPIO_Port GPIOD
 #define RST_Pin GPIO_PIN_5
