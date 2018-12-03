@@ -387,6 +387,36 @@ void displayTaskUpdate(Paint *paint,EPD *epd, unsigned char * frame_buffer) {
 
 }
 
+void displayMessageShutdown(Paint *paint,EPD *epd, unsigned char * frame_buffer) {
+
+	      EPD_ClearFrameMemory(epd, 0xFF);
+		  EPD_DisplayFrame(epd);
+		  EPD_ClearFrameMemory(epd, 0xFF);
+		  EPD_DisplayFrame(epd);
+
+	  if (EPD_Init(epd, lut_full_update) != 0) {
+	    return;
+	  }
+
+
+          Paint_Clear(paint, UNCOLORED);
+          Paint_DrawStringAt(paint, 8, 4, "FreeVario", &Font16, COLORED);
+          EPD_SetFrameMemory(epd, frame_buffer, 2, 25, Paint_GetWidth(paint), Paint_GetHeight(paint));
+
+	      Paint_Clear(paint, UNCOLORED);
+	      Paint_DrawStringAt(paint, 50, 4, "is", &Font16, COLORED);
+	      EPD_SetFrameMemory(epd, frame_buffer, 2, 100, Paint_GetWidth(paint), Paint_GetHeight(paint));
+
+	      Paint_Clear(paint, UNCOLORED);
+	      Paint_DrawStringAt(paint, 8, 4, "sleeping", &Font16, COLORED);
+	      EPD_SetFrameMemory(epd, frame_buffer, 2, 175, Paint_GetWidth(paint), Paint_GetHeight(paint));
+
+	      EPD_DisplayFrame(epd);
+
+
+}
+
+
 //char array, the value, divide by amount (1000), reduce after 0
 void intTocharFloat(char *buffer, int value, uint16_t div, uint16_t dif){
 

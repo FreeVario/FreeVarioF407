@@ -85,7 +85,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
-QueueHandle_t sysQueueHandle;
+
 QueueHandle_t uartQueueHandle;
 
 /* FV CCM memory allocation-----------------------------------------------------*/
@@ -98,6 +98,8 @@ uint8_t nmeasendbuffer[SENDBUFFER] __attribute__((section(".ccmram")));
 /*-----------------------------------------------------------------------------*/
 TaskHandle_t xTaskToNotify = NULL;
 TaskHandle_t xSendDataNotify = NULL;
+TaskHandle_t xDisplayNotify = NULL;
+
 extern UART_HandleTypeDef huart1;
 extern UART_HandleTypeDef huart3;
 extern char SDPath[4]; /* SD logical drive path */
@@ -116,7 +118,7 @@ osThreadId audioTaskHandle;
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *UartHandle) {
 
-	//memcpy(&transferBuffer, &receiveBuffer, GPSDMAHALFBUFFER);
+
 	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 	vTaskNotifyGiveFromISR(xTaskToNotify, &xHigherPriorityTaskWoken);
 
@@ -127,11 +129,11 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *UartHandle) {
 
 void HAL_UART_RxIdleCallback(UART_HandleTypeDef *UartHandle) {
 	__HAL_UART_DISABLE_IT(UartHandle, UART_IT_IDLE);
-
-	//	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-	//	vTaskNotifyGiveFromISR( xTaskToNotify, &xHigherPriorityTaskWoken );
-	//	xTaskToNotify = NULL;
-	//    portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
+//
+//		BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+//		vTaskNotifyGiveFromISR( xTaskToNotify, &xHigherPriorityTaskWoken );
+//		xTaskToNotify = NULL;
+//	    portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
 
 }
 
@@ -240,7 +242,7 @@ void MX_FREERTOS_Init(void) {
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* definition and creation of displayTask */
-  osThreadDef(displayTask, StartDisplayTask, osPriorityBelowNormal, 0, 1024);
+  osThreadDef(displayTask, StartDisplayTask, osPriorityBelowNormal, 0, 2048);
   displayTaskHandle = osThreadCreate(osThread(displayTask), NULL);
 
   /* definition and creation of sensorsTask */
@@ -248,11 +250,11 @@ void MX_FREERTOS_Init(void) {
   sensorsTaskHandle = osThreadCreate(osThread(sensorsTask), NULL);
 
   /* definition and creation of gpsTask */
-  osThreadDef(gpsTask, StartGPSTask, osPriorityNormal, 0, 1024);
+  osThreadDef(gpsTask, StartGPSTask, osPriorityNormal, 0, 2048);
   gpsTaskHandle = osThreadCreate(osThread(gpsTask), NULL);
 
   /* definition and creation of sendDataTask */
-  osThreadDef(sendDataTask, StartSendDataTask, osPriorityAboveNormal, 0, 1024);
+  osThreadDef(sendDataTask, StartSendDataTask, osPriorityAboveNormal, 0, 2048);
   sendDataTaskHandle = osThreadCreate(osThread(sendDataTask), NULL);
 
   /* definition and creation of audioTask */
@@ -266,7 +268,8 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN RTOS_QUEUES */
 	/* add queues, ... */
 
-	uartQueueHandle = xQueueCreate(4, SENDBUFFER);
+	uartQueueHandle = xQueueCreate(2, SENDBUFFER);
+
   /* USER CODE END RTOS_QUEUES */
 }
 
@@ -321,9 +324,13 @@ void StartDefaultTask(void const * argument)
 	for (;;) {
 		if  (UserPowerButton) {
 			UserPowerButton = 0;
+			xTaskNotify(xDisplayNotify,0x01,eSetValueWithOverwrite);
 			while(HAL_GPIO_ReadPin(PWRBUTTON_GPIO_Port,PWRBUTTON_Pin) == GPIO_PIN_SET) { //wait for button to be released
 			}
 			//TODO: set shutdown message
+
+
+
 			osDelay(4000);
 			StandbyMode();
 		}
@@ -345,6 +352,9 @@ void StartDisplayTask(void const * argument)
   /* USER CODE BEGIN StartDisplayTask */
 	//unsigned char * frame_buffer = (unsigned char*)malloc(EPD_WIDTH * EPD_HEIGHT / 8);
 	memset(frame_buffer , 0, EPD_WIDTH * EPD_HEIGHT / 8);
+	uint32_t ulNotifiedValue;
+	BaseType_t xResult;
+	const TickType_t xMaxBlockTime = pdMS_TO_TICKS( 500 );
 
 		EPD epd;
 		displayTaskSetup(&paint,&epd, frame_buffer);
@@ -353,7 +363,29 @@ void StartDisplayTask(void const * argument)
 	/* Infinite loop */
 	for (;;) {
 		 displayTaskUpdate(&paint,&epd,frame_buffer);
-		osDelay(500);
+		 xDisplayNotify = xTaskGetCurrentTaskHandle();
+
+		 xResult = xTaskNotifyWait( pdFALSE,    /* Don't clear bits on entry. */
+		                            pdTRUE,        /* Clear all bits on exit. */
+		                            &ulNotifiedValue, /* Stores the notified value. */
+		                            xMaxBlockTime );
+		 if( xResult == pdPASS )
+		      {
+		         /* A notification was received.  See which bits were set. */
+		         if( ( ulNotifiedValue & 0x01 ) != 0 )
+		         {
+		        	 displayMessageShutdown(&paint,&epd,frame_buffer);
+		        	 osDelay(4000); //just sleep till shutdown
+		         }
+
+		         if( ( ulNotifiedValue & 0x02 ) != 0 )
+		         {
+
+		         }
+		      }
+
+
+
 	}
   /* USER CODE END StartDisplayTask */
 }
