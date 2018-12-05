@@ -86,7 +86,6 @@
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
 
-QueueHandle_t uartQueueHandle;
 
 /* FV CCM memory allocation-----------------------------------------------------*/
 unsigned char * frame_buffer[EPD_WIDTH * EPD_HEIGHT / 8] __attribute__((section(".ccmram")));
@@ -96,15 +95,30 @@ gps_t  hgps __attribute__((section(".ccmram")));
 settings_t conf __attribute__((section(".ccmram")));
 uint8_t nmeasendbuffer[SENDBUFFER] __attribute__((section(".ccmram")));
 /*-----------------------------------------------------------------------------*/
+
+/* FV Task allocation----------------------------------------------------------*/
+
 TaskHandle_t xTaskToNotify = NULL;
 TaskHandle_t xSendDataNotify = NULL;
 TaskHandle_t xDisplayNotify = NULL;
+
+/* FV Queues  -----------------------------------------------------------------*/
+
+QueueHandle_t uartQueueHandle;
+
+/* FV Semaphores and Mutexes---------------------------------------------------*/
+
+
+
+/*-----------------------------------------------------------------------------*/
 
 extern UART_HandleTypeDef huart1;
 extern UART_HandleTypeDef huart3;
 extern char SDPath[4]; /* SD logical drive path */
 extern FATFS SDFatFS; /* File system object for SD logical drive */
 __IO uint8_t UserPowerButton = 0;
+
+
 /* USER CODE END Variables */
 osThreadId defaultTaskHandle;
 osThreadId displayTaskHandle;
@@ -112,6 +126,8 @@ osThreadId sensorsTaskHandle;
 osThreadId gpsTaskHandle;
 osThreadId sendDataTaskHandle;
 osThreadId audioTaskHandle;
+osMutexId confMutexHandle;
+osMutexId sdCardMutexHandle;
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -224,6 +240,15 @@ void MX_FREERTOS_Init(void) {
 
   /* USER CODE END Init */
 
+  /* Create the mutex(es) */
+  /* definition and creation of confMutex */
+  osMutexDef(confMutex);
+  confMutexHandle = osMutexCreate(osMutex(confMutex));
+
+  /* definition and creation of sdCardMutex */
+  osMutexDef(sdCardMutex);
+  sdCardMutexHandle = osMutexCreate(osMutex(sdCardMutex));
+
   /* USER CODE BEGIN RTOS_MUTEX */
 	/* add mutexes, ... */
   /* USER CODE END RTOS_MUTEX */
@@ -292,34 +317,36 @@ void StartDefaultTask(void const * argument)
 	//BSP_SD_Init();
 	setupConfig();
 	FIL MyFile;
+	if ( xSemaphoreTake( confMutexHandle, ( TickType_t ) 10 ) == pdTRUE) { //Get Mutex
 
-	if (f_mount(&SDFatFS, SDPath, 0) == FR_OK) {
+		if (f_mount(&SDFatFS, SDPath, 0) == FR_OK) {
 
-		uint8_t wtext[] = "This is STM32 working with FatFs\r\n";
-		FRESULT res;
-		uint32_t byteswritten;
-		if (f_open(&MyFile, "STM32.TXT", FA_CREATE_ALWAYS | FA_WRITE)
-				!= FR_OK) {
-			/* 'STM32.TXT' file Open for write Error */
-			//Error_Handler();
-		} else {
-			/* Write data to the text file */
-			res = f_write(&MyFile, wtext, sizeof(wtext),
-					(void *) &byteswritten);
-
-			if ((byteswritten == 0) || (res != FR_OK)) {
-				/* 'STM32.TXT' file Write or EOF Error */
+			uint8_t wtext[] = "This is STM32 working with FatFs\r\n";
+			FRESULT res;
+			uint32_t byteswritten;
+			if (f_open(&MyFile, "other.file", FA_CREATE_ALWAYS | FA_WRITE)
+					!= FR_OK) {
+				/* 'STM32.TXT' file Open for write Error */
 				//Error_Handler();
 			} else {
-				/* Close the open text file */
-				f_close(&MyFile);
-				f_mount(0, "0:", 1); //unmount
+				/* Write data to the text file */
+				res = f_write(&MyFile, wtext, sizeof(wtext),
+						(void *) &byteswritten);
+
+				if ((byteswritten == 0) || (res != FR_OK)) {
+					/* 'STM32.TXT' file Write or EOF Error */
+					//Error_Handler();
+				} else {
+					/* Close the open text file */
+					f_close(&MyFile);
+					f_mount(0, "0:", 1); //unmount
+				}
+
 			}
-
+			//  f_mount(0, "0:", 1);
 		}
-		//  f_mount(0, "0:", 1);
+		xSemaphoreGive(confMutexHandle);
 	}
-
 	/* Infinite loop */
 	for (;;) {
 		if  (UserPowerButton) {

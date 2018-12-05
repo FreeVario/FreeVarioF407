@@ -15,14 +15,18 @@
 #include "cmsis_os.h"
 #include "stdbool.h"
 #include <stdlib.h>
+#include "../fvconfig.h"
 
+void saveConfigtoSD();
+void loadConfigFromSD();
 void getDefaultConfig();
 void setupConfig();
 
 
+
 typedef struct {
   int eepromSaveVersion;
-  float qnePressure;
+  int qnePressure;
   int sinkAlarmLevel;
   bool SerialOut;
   bool SerialOutBT;
@@ -47,7 +51,12 @@ typedef struct {
 extern settings_t conf;
 
 
+typedef enum {
 
+	s_eepromSaveVersion = 1,
+	s_qnePressure = 2
+
+} Settings_headers;
 
 
 

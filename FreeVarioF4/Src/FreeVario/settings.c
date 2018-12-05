@@ -12,19 +12,55 @@
 
 #include "settings.h"
 
+extern osMutexId confMutexHandle;
+extern osMutexId sdCardMutexHandle;
+
 void setupConfig(){
 
-
-#if defined(CONFIGOPT)
-
-
+#if defined(SDCONFIGSAVE)
+	loadConfigFromSD();
 
 #else
   getDefaultConfig();
 #endif
 }
 
+void saveConfigtoSD() {
 
+	if ( xSemaphoreTake( sdCardMutexHandle, ( TickType_t ) 500 ) == pdTRUE) {
+		if ( xSemaphoreTake( confMutexHandle, ( TickType_t ) 100 ) == pdTRUE) {
+			/* We were able to obtain the semaphore and can now access the
+			 shared resource. */
+
+			/* ... */
+
+			/* We have finished accessing the shared resource.  Release the
+			 semaphore. */
+			xSemaphoreGive(confMutexHandle);
+		}
+		xSemaphoreGive(sdCardMutexHandle);
+	}
+
+
+
+}
+
+void loadConfigFromSD() {
+	if ( xSemaphoreTake( sdCardMutexHandle, ( TickType_t ) 500 ) == pdTRUE) {
+		if ( xSemaphoreTake( confMutexHandle, ( TickType_t ) 100 ) == pdTRUE) {
+			/* We were able to obtain the semaphore and can now access the
+			 shared resource. */
+
+			/* ... */
+			getDefaultConfig();
+			/* We have finished accessing the shared resource.  Release the
+			 semaphore. */
+			xSemaphoreGive(confMutexHandle);
+		}
+		xSemaphoreGive(sdCardMutexHandle);
+	}
+
+}
 
 
 void getDefaultConfig() {

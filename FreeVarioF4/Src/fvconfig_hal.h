@@ -20,12 +20,8 @@
 #define FVCONFIG_HAL_H_
 #include "stm32f4xx_hal.h"
 
-static uint32_t GetSectorSize(uint32_t Sector);
-
-#define FLASH_USER_START_ADDR   ADDR_FLASH_SECTOR_2   /* Start @ of user Flash area */
-#define FLASH_USER_END_ADDR     ADDR_FLASH_SECTOR_11  +  GetSectorSize(ADDR_FLASH_SECTOR_11) -1 /* End @ of user Flash area : sector start address + sector size -1 */
-
-#define DATA_32                 ((uint32_t)0x12345678)
+//Save config to SDCard
+#define SDCONFIGSAVE
 
 //Board LED
 #define FV_LED LD9_Pin
@@ -106,25 +102,6 @@ static uint32_t GetSectorSize(uint32_t Sector);
 #define FV_BTNPREV  GPIO_PIN_4 //B
 #define FV_BRNPRT 	GPIOB
 
-
-static uint32_t GetSectorSize(uint32_t Sector)
-{
-  uint32_t sectorsize = 0x00;
-
-  if((Sector == FLASH_SECTOR_0) || (Sector == FLASH_SECTOR_1) || (Sector == FLASH_SECTOR_2) || (Sector == FLASH_SECTOR_3))
-  {
-    sectorsize = 16 * 1024;
-  }
-  else if(Sector == FLASH_SECTOR_4)
-  {
-    sectorsize = 64 * 1024;
-  }
-  else
-  {
-    sectorsize = 128 * 1024;
-  }
-  return sectorsize;
-}
 
 
 
