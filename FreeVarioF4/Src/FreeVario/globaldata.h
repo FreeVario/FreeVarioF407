@@ -9,6 +9,7 @@
 #define GLOBALDATA_H_
 #include "../fvconfig.h"
 
+
  typedef struct {
 	int16_t temperature;  // C x100
 	uint32_t pressure;    //Pa x100

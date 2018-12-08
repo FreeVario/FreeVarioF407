@@ -117,6 +117,7 @@ extern UART_HandleTypeDef huart3;
 extern char SDPath[4]; /* SD logical drive path */
 extern FATFS SDFatFS; /* File system object for SD logical drive */
 __IO uint8_t UserPowerButton = 0;
+uint8_t SDcardMounted = 0;
 
 
 /* USER CODE END Variables */
@@ -126,6 +127,7 @@ osThreadId sensorsTaskHandle;
 osThreadId gpsTaskHandle;
 osThreadId sendDataTaskHandle;
 osThreadId audioTaskHandle;
+osThreadId loggerTaskHandle;
 osMutexId confMutexHandle;
 osMutexId sdCardMutexHandle;
 
@@ -225,6 +227,7 @@ void StartSensorsTask(void const * argument);
 void StartGPSTask(void const * argument);
 void StartSendDataTask(void const * argument);
 void StartAudioTask(void const * argument);
+void StartLoggerTask(void const * argument);
 
 extern void MX_FATFS_Init(void);
 extern void MX_USB_DEVICE_Init(void);
@@ -286,6 +289,10 @@ void MX_FREERTOS_Init(void) {
   osThreadDef(audioTask, StartAudioTask, osPriorityNormal, 0, 1024);
   audioTaskHandle = osThreadCreate(osThread(audioTask), NULL);
 
+  /* definition and creation of loggerTask */
+  osThreadDef(loggerTask, StartLoggerTask, osPriorityNormal, 0, 1024);
+  loggerTaskHandle = osThreadCreate(osThread(loggerTask), NULL);
+
   /* USER CODE BEGIN RTOS_THREADS */
 	/* add threads, ... */
   /* USER CODE END RTOS_THREADS */
@@ -320,54 +327,24 @@ void StartDefaultTask(void const * argument)
 
   if ( xSemaphoreTake( sdCardMutexHandle, ( TickType_t ) 500 ) == pdTRUE) {
 		if ( xSemaphoreTake( confMutexHandle, ( TickType_t ) 100 ) == pdTRUE) {
-
+			if (f_mount(&SDFatFS, SDPath, 0) == FR_OK) { //Mount SD card
+				SDcardMounted =1;
+			}
 			loadConfigFromSD();
 			xSemaphoreGive(confMutexHandle);
 		}
 		xSemaphoreGive(sdCardMutexHandle);
   }
 
-	FIL MyFile;
-	if ( xSemaphoreTake( sdCardMutexHandle, ( TickType_t ) 10 ) == pdTRUE) { //Get Mutex
-
-		if (f_mount(&SDFatFS, SDPath, 0) == FR_OK) {
-
-			uint8_t wtext[] = "This is STM32 working with FatFs\r\n";
-			FRESULT res;
-			uint32_t byteswritten;
-			if (f_open(&MyFile, "other.file", FA_CREATE_ALWAYS | FA_WRITE)
-					!= FR_OK) {
-				/* 'STM32.TXT' file Open for write Error */
-				//Error_Handler();
-			} else {
-				/* Write data to the text file */
-				res = f_write(&MyFile, wtext, sizeof(wtext),
-						(void *) &byteswritten);
-
-				if ((byteswritten == 0) || (res != FR_OK)) {
-					/* 'STM32.TXT' file Write or EOF Error */
-					//Error_Handler();
-				} else {
-					/* Close the open text file */
-					f_close(&MyFile);
-					f_mount(0, "0:", 1); //unmount
-				}
-
-			}
-			//  f_mount(0, "0:", 1);
-		}
-		xSemaphoreGive(confMutexHandle);
-	}
 	/* Infinite loop */
 	for (;;) {
+
 		if  (UserPowerButton) {
 			UserPowerButton = 0;
 			xTaskNotify(xDisplayNotify,0x01,eSetValueWithOverwrite);
 			while(HAL_GPIO_ReadPin(PWRBUTTON_GPIO_Port,PWRBUTTON_Pin) == GPIO_PIN_SET) { //wait for button to be released
 			}
-			//TODO: set shutdown message
-
-
+			f_mount(0, "0:", 1); //unmount SDCARD
 
 			osDelay(4000);
 			StandbyMode();
@@ -421,8 +398,6 @@ void StartDisplayTask(void const * argument)
 
 		         }
 		      }
-
-
 
 	}
   /* USER CODE END StartDisplayTask */
@@ -563,7 +538,7 @@ void StartSendDataTask(void const * argument)
 
 		HAL_UART_Transmit_DMA(&huart1, (uint8_t *) &receiveqBuffer, buffsize); //Usart global interupt must be enabled for this to work
 		CDC_Transmit_FS((uint8_t *) &receiveqBuffer, buffsize);
-		HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+	//	HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
 		ulTaskNotifyTake( pdTRUE, xMaxBlockTime);
 
 		osDelay(1);
@@ -616,6 +591,69 @@ void StartAudioTask(void const * argument)
 		osDelay(10);
 	}
   /* USER CODE END StartAudioTask */
+}
+
+/* USER CODE BEGIN Header_StartLoggerTask */
+/**
+* @brief Function implementing the loggerTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartLoggerTask */
+void StartLoggerTask(void const * argument)
+{
+  /* USER CODE BEGIN StartLoggerTask */
+
+	TickType_t times;
+	const TickType_t xDelay = 1000;
+	FIL logFile;
+	FRESULT res;
+	uint32_t byteswritten;
+	uint8_t wtext[16];
+	osDelay(5000); //wait for setup of environment
+  /* Infinite loop */
+	for (;;) {
+		times = xTaskGetTickCount();
+		if (!SDcardMounted) { //can't continue without a SD card
+			vTaskSuspend( NULL);
+		}
+		//if (sensors.barotakeoff) {
+			//
+
+			sprintf(wtext,"Tick:%d\r\n",(int)xTaskGetTickCount());
+
+			if ( xSemaphoreTake(sdCardMutexHandle,
+					(TickType_t ) 600) == pdTRUE) {
+
+				if (f_open(&logFile, "mylog.log",
+						FA_CREATE_ALWAYS | FA_WRITE) != FR_OK) {
+					/* 'STM32.TXT' file Open for write Error */
+					//Error_Handler();
+				} else {
+					/* Write data to the text file */
+					res = f_write(&logFile, wtext, sizeof(wtext),
+							(void *) &byteswritten);
+					HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+					if ((byteswritten == 0) || (res != FR_OK)) {
+						/* 'STM32.TXT' file Write or EOF Error */
+						//Error_Handler();
+					} else {
+						/* Close the open text file */
+						f_close(&logFile);
+
+					}
+
+				}
+				f_mount(0, "0:", 1); //unmount SDCARD
+				f_mount(&SDFatFS, SDPath, 0);
+				xSemaphoreGive(sdCardMutexHandle);
+			}
+			//
+		//}
+
+		vTaskDelayUntil(&times, xDelay);
+	}
+  /* USER CODE END StartLoggerTask */
 }
 
 /* Private application code --------------------------------------------------*/

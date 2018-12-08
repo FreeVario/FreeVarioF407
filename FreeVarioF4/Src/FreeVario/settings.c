@@ -13,6 +13,7 @@
 #include "settings.h"
 
 extern char SDPath[4]; /* SD logical drive path */
+extern uint8_t SDcardMounted;
 
 /**
  * @brief  Save to SD, Mutexes must be claimed .
@@ -22,7 +23,7 @@ extern char SDPath[4]; /* SD logical drive path */
 void saveConfigtoSD() {
 	FIL confFile;
 
-			if (f_mount(&SDFatFS, SDPath, 0) == FR_OK) {
+			if (SDcardMounted) {
 				FRESULT res;
 				uint32_t byteswritten;
 				if (f_open(&confFile, CONFIGFILENAME, FA_CREATE_ALWAYS | FA_WRITE)
@@ -40,7 +41,7 @@ void saveConfigtoSD() {
 					} else {
 						/* Close the open text file */
 						f_close(&confFile);
-						f_mount(0, "0:", 1); //unmount
+
 					}
 
 				}
@@ -54,7 +55,7 @@ void loadConfigFromSD() {
 	FIL confFile;
 	FRESULT res;
 
-	if (f_mount(&SDFatFS, SDPath, 0) == FR_OK) {
+	if (SDcardMounted) {
 			if (f_open(&confFile, CONFIGFILENAME, FA_READ) != FR_OK) {
 
 				getDefaultConfig();
@@ -73,7 +74,7 @@ void loadConfigFromSD() {
 				f_close(&confFile);
 
 			}
-		f_mount(0, "0:", 1); //unmount
+
 	}else{
 		getDefaultConfig();
 	}
