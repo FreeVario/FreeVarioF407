@@ -12,58 +12,80 @@
 
 #include "settings.h"
 
-extern osMutexId confMutexHandle;
-extern osMutexId sdCardMutexHandle;
+extern char SDPath[4]; /* SD logical drive path */
 
-void setupConfig(){
-
-#if defined(SDCONFIGSAVE)
-	loadConfigFromSD();
-
-#else
-  getDefaultConfig();
-#endif
-}
-
+/**
+ * @brief  Save to SD, Mutexes must be claimed .
+ * @param  argument: Not used
+ * @retval None
+ */
 void saveConfigtoSD() {
+	FIL confFile;
 
-	if ( xSemaphoreTake( sdCardMutexHandle, ( TickType_t ) 500 ) == pdTRUE) {
-		if ( xSemaphoreTake( confMutexHandle, ( TickType_t ) 100 ) == pdTRUE) {
-			/* We were able to obtain the semaphore and can now access the
-			 shared resource. */
+			if (f_mount(&SDFatFS, SDPath, 0) == FR_OK) {
+				FRESULT res;
+				uint32_t byteswritten;
+				if (f_open(&confFile, CONFIGFILENAME, FA_CREATE_ALWAYS | FA_WRITE)
+						!= FR_OK) {
+					/* 'STM32.TXT' file Open for write Error */
+					//Error_Handler();
+				} else {
+					/* Write data to the text file */
+					res = f_write(&confFile, &conf, sizeof(conf),
+							(void *) &byteswritten);
 
-			/* ... */
+					if ((byteswritten == 0) || (res != FR_OK)) {
+						/* 'STM32.TXT' file Write or EOF Error */
+						//Error_Handler();
+					} else {
+						/* Close the open text file */
+						f_close(&confFile);
+						f_mount(0, "0:", 1); //unmount
+					}
 
-			/* We have finished accessing the shared resource.  Release the
-			 semaphore. */
-			xSemaphoreGive(confMutexHandle);
-		}
-		xSemaphoreGive(sdCardMutexHandle);
+				}
+
 	}
-
-
-
 }
+
 
 void loadConfigFromSD() {
-	if ( xSemaphoreTake( sdCardMutexHandle, ( TickType_t ) 500 ) == pdTRUE) {
-		if ( xSemaphoreTake( confMutexHandle, ( TickType_t ) 100 ) == pdTRUE) {
-			/* We were able to obtain the semaphore and can now access the
-			 shared resource. */
+	uint32_t bytesread;
+	FIL confFile;
+	FRESULT res;
 
-			/* ... */
-			getDefaultConfig();
-			/* We have finished accessing the shared resource.  Release the
-			 semaphore. */
-			xSemaphoreGive(confMutexHandle);
-		}
-		xSemaphoreGive(sdCardMutexHandle);
+	if (f_mount(&SDFatFS, SDPath, 0) == FR_OK) {
+			if (f_open(&confFile, CONFIGFILENAME, FA_READ) != FR_OK) {
+
+				getDefaultConfig();
+				saveConfigtoSD();
+
+			} else {
+
+				res = f_read(&confFile, &conf, sizeof(conf), (void *) &bytesread);
+
+				if ((bytesread == 0) || (res != FR_OK)) {
+
+					getDefaultConfig();
+					saveConfigtoSD();
+				}
+
+				f_close(&confFile);
+
+			}
+		f_mount(0, "0:", 1); //unmount
+	}else{
+		getDefaultConfig();
 	}
+
 
 }
 
 
 void getDefaultConfig() {
+ //version of the struct
+  conf.SaveVersion = 1;
+
   //QNH value to calculate vario Altitude
   conf.qnePressure = 101325;
 
@@ -118,6 +140,7 @@ void getDefaultConfig() {
 
   // highest level for conf.variosmooth
   conf.advMaxSmooth = 30;
+
 
 }
 

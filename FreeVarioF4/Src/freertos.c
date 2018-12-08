@@ -315,9 +315,20 @@ void StartDefaultTask(void const * argument)
 
   /* USER CODE BEGIN StartDefaultTask */
 	//BSP_SD_Init();
-	setupConfig();
+  xSemaphoreGive(confMutexHandle);
+  xSemaphoreGive(sdCardMutexHandle);
+
+  if ( xSemaphoreTake( sdCardMutexHandle, ( TickType_t ) 500 ) == pdTRUE) {
+		if ( xSemaphoreTake( confMutexHandle, ( TickType_t ) 100 ) == pdTRUE) {
+
+			loadConfigFromSD();
+			xSemaphoreGive(confMutexHandle);
+		}
+		xSemaphoreGive(sdCardMutexHandle);
+  }
+
 	FIL MyFile;
-	if ( xSemaphoreTake( confMutexHandle, ( TickType_t ) 10 ) == pdTRUE) { //Get Mutex
+	if ( xSemaphoreTake( sdCardMutexHandle, ( TickType_t ) 10 ) == pdTRUE) { //Get Mutex
 
 		if (f_mount(&SDFatFS, SDPath, 0) == FR_OK) {
 
@@ -597,7 +608,7 @@ void StartAudioTask(void const * argument)
 //		t_vario += step;
 //	  }
 		if (running) {
-			if (sensors.barotakeoff) {
+		if (sensors.barotakeoff) {
 				makeVarioAudio(&audiorun, sensors.VarioMs); //flying
 			}
 		}

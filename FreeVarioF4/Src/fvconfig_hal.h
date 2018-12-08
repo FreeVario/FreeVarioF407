@@ -22,6 +22,7 @@
 
 //Save config to SDCard
 #define SDCONFIGSAVE
+#define CONFIGFILENAME "settings.cfg"
 
 //Board LED
 #define FV_LED LD9_Pin
