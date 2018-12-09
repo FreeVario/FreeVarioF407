@@ -85,7 +85,7 @@ void loadConfigFromSD() {
 
 void getDefaultConfig() {
  //version of the struct
-  conf.SaveVersion = 1;
+  conf.SaveVersion = 2;
 
   //QNH value to calculate vario Altitude
   conf.qnePressure = 101325;
@@ -140,9 +140,10 @@ void getDefaultConfig() {
   conf.advMinSmooth = 8;
 
   // highest level for conf.variosmooth
-  conf.advMaxSmooth = 30;
+  conf.advMaxSmooth = 35;
 
-
+  //save the last logbook number
+  conf.lastLogNumber = 1;
 }
 
 

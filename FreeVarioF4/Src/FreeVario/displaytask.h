@@ -16,12 +16,13 @@
 #include "epd2in9.h"
 #include "epdif.h"
 #include "epdpaint.h"
-
+#include "gps.h"
 #include "../fvconfig.h"
 #include <stdlib.h>
 #include <globaldata.h>
 
 extern SensorData sensors;
+extern gps_t  hgps;
 
 //TODO: Fix compiler warning
 

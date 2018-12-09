@@ -347,7 +347,7 @@ void displayTaskUpdate(Paint *paint,EPD *epd, unsigned char * frame_buffer) {
 	char BmpAltitude[9];
 	char BmpVario[9];
 	char BmpTemp[6];
-	char BmpPressure[9];
+	char GPSSpeed[9];
 
 	    Paint_SetWidth(paint, 112);
 	    Paint_SetHeight(paint, 24);
@@ -371,9 +371,10 @@ void displayTaskUpdate(Paint *paint,EPD *epd, unsigned char * frame_buffer) {
     EPD_SetFrameMemory(epd, frame_buffer, 8, 100, Paint_GetWidth(paint), Paint_GetHeight(paint));
 
 
-    sprintf(BmpPressure," %d",sensors.pressure/10000);
+    //sprintf(GPSSpeed," %d",hgps.minutes);
+    intTocharFloat(GPSSpeed, hgps.speed*1.85,1,10);
     Paint_Clear(paint, UNCOLORED);
-    Paint_DrawStringAt(paint, 0, 4, BmpPressure, &Font24, COLORED);
+    Paint_DrawStringAt(paint, 0, 4, GPSSpeed, &Font24, COLORED);
     EPD_SetFrameMemory(epd, frame_buffer, 8, 175, Paint_GetWidth(paint), Paint_GetHeight(paint));
 
     intTocharFloat(BmpTemp, sensors.temperature,100,1);
@@ -383,6 +384,7 @@ void displayTaskUpdate(Paint *paint,EPD *epd, unsigned char * frame_buffer) {
 
 
    EPD_DisplayFrame(epd);
+
 
 
 }
@@ -412,6 +414,7 @@ void displayMessageShutdown(Paint *paint,EPD *epd, unsigned char * frame_buffer)
 	      EPD_SetFrameMemory(epd, frame_buffer, 2, 175, Paint_GetWidth(paint), Paint_GetHeight(paint));
 
 	      EPD_DisplayFrame(epd);
+
 
 
 }

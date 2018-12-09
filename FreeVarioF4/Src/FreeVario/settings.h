@@ -46,6 +46,7 @@ typedef struct {
   int advMinSmooth;
   int advMaxSmooth;
   int gliderSinkRate;
+  int lastLogNumber;
 
 } settings_t;
 

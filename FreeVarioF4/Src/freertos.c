@@ -91,6 +91,7 @@
 unsigned char * frame_buffer[EPD_WIDTH * EPD_HEIGHT / 8] __attribute__((section(".ccmram")));
 Paint  paint __attribute__((section(".ccmram")));
 SensorData sensors __attribute__((section(".ccmram")));
+ActivityData activity __attribute__((section(".ccmram")));
 gps_t  hgps __attribute__((section(".ccmram")));
 settings_t conf __attribute__((section(".ccmram")));
 uint8_t nmeasendbuffer[SENDBUFFER] __attribute__((section(".ccmram")));
@@ -101,6 +102,7 @@ uint8_t nmeasendbuffer[SENDBUFFER] __attribute__((section(".ccmram")));
 TaskHandle_t xTaskToNotify = NULL;
 TaskHandle_t xSendDataNotify = NULL;
 TaskHandle_t xDisplayNotify = NULL;
+
 
 /* FV Queues  -----------------------------------------------------------------*/
 
@@ -130,6 +132,7 @@ osThreadId audioTaskHandle;
 osThreadId loggerTaskHandle;
 osMutexId confMutexHandle;
 osMutexId sdCardMutexHandle;
+osMutexId activityMutexHandle;
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -252,6 +255,10 @@ void MX_FREERTOS_Init(void) {
   osMutexDef(sdCardMutex);
   sdCardMutexHandle = osMutexCreate(osMutex(sdCardMutex));
 
+  /* definition and creation of activityMutex */
+  osMutexDef(activityMutex);
+  activityMutexHandle = osMutexCreate(osMutex(activityMutex));
+
   /* USER CODE BEGIN RTOS_MUTEX */
 	/* add mutexes, ... */
   /* USER CODE END RTOS_MUTEX */
@@ -324,6 +331,7 @@ void StartDefaultTask(void const * argument)
 	//BSP_SD_Init();
   xSemaphoreGive(confMutexHandle);
   xSemaphoreGive(sdCardMutexHandle);
+  xSemaphoreGive(activityMutexHandle);
 
   if ( xSemaphoreTake( sdCardMutexHandle, ( TickType_t ) 500 ) == pdTRUE) {
 		if ( xSemaphoreTake( confMutexHandle, ( TickType_t ) 100 ) == pdTRUE) {
@@ -369,16 +377,22 @@ void StartDisplayTask(void const * argument)
 	memset(frame_buffer , 0, EPD_WIDTH * EPD_HEIGHT / 8);
 	uint32_t ulNotifiedValue;
 	BaseType_t xResult;
-	const TickType_t xMaxBlockTime = pdMS_TO_TICKS( 500 );
-
+	 TickType_t xMaxBlockTime;
+	 TickType_t times;
+	 activity.currentLogID = 1;
 		EPD epd;
 		displayTaskSetup(&paint,&epd, frame_buffer);
 
 
 	/* Infinite loop */
 	for (;;) {
+		times = xTaskGetTickCount();
 		 displayTaskUpdate(&paint,&epd,frame_buffer);
+
 		 xDisplayNotify = xTaskGetCurrentTaskHandle();
+		 TickType_t waittime = abs( 500 - (xTaskGetTickCount() - times) ) ;
+		 if (waittime > 500) waittime = 500;
+		 xMaxBlockTime = pdMS_TO_TICKS(waittime);
 
 		 xResult = xTaskNotifyWait( pdFALSE,    /* Don't clear bits on entry. */
 		                            pdTRUE,        /* Clear all bits on exit. */
@@ -464,6 +478,7 @@ void StartSensorsTask(void const * argument)
 				&& !sensors.barotakeoff) {
 			if (abs(sensors.VarioMs) > TAKEOFFVARIO) {
 				sensors.barotakeoff = true;
+				activity.currentLogID = conf.lastLogNumber + 1;
 			}
 
 		}
@@ -507,7 +522,7 @@ void StartGPSTask(void const * argument)
 		rcvdCount = sizeof(buffer) - huart3.hdmarx->Instance->NDTR;
 		HAL_UART_DMAStop(&huart3);
 
-		gps_process(&hgps, buffer, rcvdCount);
+		gps_process(&hgps, &buffer, sizeof(buffer));
 		xQueueSendToBack(uartQueueHandle, buffer, 10);
 
 	}
@@ -538,7 +553,7 @@ void StartSendDataTask(void const * argument)
 
 		HAL_UART_Transmit_DMA(&huart1, (uint8_t *) &receiveqBuffer, buffsize); //Usart global interupt must be enabled for this to work
 		CDC_Transmit_FS((uint8_t *) &receiveqBuffer, buffsize);
-	//	HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+		HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
 		ulTaskNotifyTake( pdTRUE, xMaxBlockTime);
 
 		osDelay(1);
@@ -617,7 +632,7 @@ void StartLoggerTask(void const * argument)
 		if (!SDcardMounted) { //can't continue without a SD card
 			vTaskSuspend( NULL);
 		}
-		//if (sensors.barotakeoff) {
+		if (sensors.barotakeoff) {
 			//
 
 			sprintf(wtext,"Tick:%d\r\n",(int)xTaskGetTickCount());
@@ -626,14 +641,14 @@ void StartLoggerTask(void const * argument)
 					(TickType_t ) 600) == pdTRUE) {
 
 				if (f_open(&logFile, "mylog.log",
-						FA_CREATE_ALWAYS | FA_WRITE) != FR_OK) {
+						FA_OPEN_APPEND | FA_WRITE) != FR_OK) {
 					/* 'STM32.TXT' file Open for write Error */
 					//Error_Handler();
 				} else {
 					/* Write data to the text file */
 					res = f_write(&logFile, wtext, sizeof(wtext),
 							(void *) &byteswritten);
-					HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+					//HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
 					if ((byteswritten == 0) || (res != FR_OK)) {
 						/* 'STM32.TXT' file Write or EOF Error */
 						//Error_Handler();
@@ -644,12 +659,15 @@ void StartLoggerTask(void const * argument)
 					}
 
 				}
-				f_mount(0, "0:", 1); //unmount SDCARD
-				f_mount(&SDFatFS, SDPath, 0);
+
+				//TODO: try fsync
+
+				//f_mount(0, "0:", 1); //unmount SDCARD
+				//f_mount(&SDFatFS, SDPath, 0);
 				xSemaphoreGive(sdCardMutexHandle);
 			}
 			//
-		//}
+		}
 
 		vTaskDelayUntil(&times, xDelay);
 	}
