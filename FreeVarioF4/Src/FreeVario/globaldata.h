@@ -30,17 +30,24 @@ extern settings_t conf; //declared at fvconf.h. So yes, you must include both fi
 
 typedef struct {
 	uint32_t takeoffTime;
+	uint32_t takeoffTemp;
+	uint32_t takeoffAltitude;
 	uint32_t takeoffLocationLAT;
 	uint32_t takeoffLocationLON;
 	uint32_t landingTime;
 	uint32_t landingLocationLAT;
 	uint32_t landingLocationLON;
+	uint32_t landingAltitude;
+	uint8_t takeOff;
 	uint8_t isFlying;
+	uint8_t landed;
 	uint8_t isLogging;
 	int32_t MaxAltitudeMeters;
+	int32_t MaxAltitudeGainedMeters;
 	int32_t MaxVarioMs;
 	int32_t MaxVarioSinkMs;
 	int32_t currentLogID;
+	uint8_t currentLogDataSet;
 }ActivityData;
 
 #endif /* GLOBALDATA_H_ */

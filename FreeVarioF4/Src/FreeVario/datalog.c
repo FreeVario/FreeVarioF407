@@ -22,13 +22,13 @@ void writeFlightLogSummaryFile(){
 	FIL logSumFile;
 	FRESULT res;
 	uint32_t byteswritten;
-	uint8_t wtext[256];
+	uint8_t wtext[128];
 	char filename[32];
-	sprintf(filename,"%d.log",activity.currentLogID);
+	sprintf(filename,"%000000d.log",activity.currentLogID);
 
 
 
-
+//lognr,starttime,startalt,temp,landingtime,landingalt,maxalt,maxaltgain,maxvario,maxsink,startlat,startlon,landinglat,landinglon
 
 	if (f_open(&logSumFile, filename,
 						FA_OPEN_APPEND | FA_WRITE) != FR_OK) {
@@ -36,7 +36,18 @@ void writeFlightLogSummaryFile(){
 					//Error_Handler();
 				} else {
 					/* Write data to the text file */
-					res = f_write(&logSumFile, wtext, sizeof(wtext),
+
+					sprintf(wtext,"%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d",
+							activity.currentLogID,activity.takeoffTime,activity.takeoffTime,
+							activity.takeoffTemp, activity.landingTime, activity.landingAltitude,
+							activity.MaxAltitudeMeters,activity.MaxAltitudeGainedMeters,
+							activity.MaxVarioMs,activity.MaxVarioSinkMs,
+							activity.takeoffLocationLAT, activity.takeoffLocationLON,
+							activity.landingLocationLAT,activity.landingLocationLON);
+
+
+
+					res = f_write(&logSumFile, wtext, strlen(wtext),
 							(void *) &byteswritten);
 					//HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
 					if ((byteswritten == 0) || (res != FR_OK)) {

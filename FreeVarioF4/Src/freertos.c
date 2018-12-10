@@ -333,6 +333,8 @@ void StartDefaultTask(void const * argument)
   xSemaphoreGive(sdCardMutexHandle);
   xSemaphoreGive(activityMutexHandle);
 
+  activity.isFlying=0;
+
   if ( xSemaphoreTake( sdCardMutexHandle, ( TickType_t ) 500 ) == pdTRUE) {
 		if ( xSemaphoreTake( confMutexHandle, ( TickType_t ) 100 ) == pdTRUE) {
 			if (f_mount(&SDFatFS, SDPath, 0) == FR_OK) { //Mount SD card
@@ -356,6 +358,35 @@ void StartDefaultTask(void const * argument)
 
 			osDelay(4000);
 			StandbyMode();
+		}
+
+
+		//Flight Operations
+
+		if(activity.takeOff && !activity.isFlying)  { //took off
+			activity.currentLogID = conf.lastLogNumber + 1;
+			activity.takeoffLocationLAT = hgps.latitude;
+			activity.takeoffLocationLON=hgps.longitude;
+			activity.takeoffTemp = sensors.temperature;
+			activity.takeoffTime = hgps.date;
+
+
+			activity.isFlying = 1;
+		}
+
+		if(activity.isFlying){ //flying
+			if(sensors.AltitudeMeters > activity.MaxAltitudeMeters) activity.MaxAltitudeMeters = sensors.AltitudeMeters;
+			if(sensors.VarioMs > activity.MaxVarioMs) activity.MaxVarioMs = sensors.VarioMs;
+			if(sensors.VarioMs < activity.MaxVarioSinkMs) activity.MaxVarioSinkMs = sensors.VarioMs;
+
+		}
+
+		if (activity.landed) {
+			activity.landingAltitude = sensors.AltitudeMeters;
+			activity.landingLocationLAT = hgps.latitude;
+			activity.landingLocationLON = hgps.longitude;
+			activity.MaxAltitudeGainedMeters = activity.MaxAltitudeMeters  - activity.takeoffAltitude;
+			activity.currentLogDataSet = 1;
 		}
 
 		osDelay(100);
@@ -478,7 +509,7 @@ void StartSensorsTask(void const * argument)
 				&& !sensors.barotakeoff) {
 			if (abs(sensors.VarioMs) > TAKEOFFVARIO) {
 				sensors.barotakeoff = true;
-				activity.currentLogID = conf.lastLogNumber + 1;
+
 			}
 
 		}
