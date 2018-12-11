@@ -179,6 +179,16 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 		if (HAL_GetTick() > 5000) {
 			UserPowerButton = 1;
 		}
+	}else if (GPIO_Pin == OPTBUTTON_Pin) {
+
+		if(activity.takeOff){
+			activity.landed = 1;
+
+		}else{
+
+		   activity.takeOff = 1;
+		}
+
 	}
 
 }
@@ -333,7 +343,8 @@ void StartDefaultTask(void const * argument)
   xSemaphoreGive(sdCardMutexHandle);
   xSemaphoreGive(activityMutexHandle);
 
-  activity.isFlying=0;
+  memset(&activity, 0, sizeof(activity));
+
 
   if ( xSemaphoreTake( sdCardMutexHandle, ( TickType_t ) 500 ) == pdTRUE) {
 		if ( xSemaphoreTake( confMutexHandle, ( TickType_t ) 100 ) == pdTRUE) {
@@ -370,7 +381,7 @@ void StartDefaultTask(void const * argument)
 			activity.takeoffTemp = sensors.temperature;
 			activity.takeoffTime = hgps.date;
 
-
+			activity.currentLogDataSet = 0;
 			activity.isFlying = 1;
 		}
 
@@ -387,6 +398,15 @@ void StartDefaultTask(void const * argument)
 			activity.landingLocationLON = hgps.longitude;
 			activity.MaxAltitudeGainedMeters = activity.MaxAltitudeMeters  - activity.takeoffAltitude;
 			activity.currentLogDataSet = 1;
+			activity.landed =0;
+			activity.takeOff =0;
+			activity.isFlying = 0;
+
+
+
+
+			conf.lastLogNumber = activity.currentLogID;
+
 		}
 
 		osDelay(100);
@@ -465,6 +485,7 @@ void StartSensorsTask(void const * argument)
 	uint8_t timetosend = 1;
 	BMP280_HandleTypedef bmp280;
 	SD_MPU6050 mpu1;
+	 memset(&sensors, 0, sizeof(sensors));
 
 	sensors.humidity = 0;
 	sensors.pressure = 0;
@@ -584,7 +605,7 @@ void StartSendDataTask(void const * argument)
 
 		HAL_UART_Transmit_DMA(&huart1, (uint8_t *) &receiveqBuffer, buffsize); //Usart global interupt must be enabled for this to work
 		CDC_Transmit_FS((uint8_t *) &receiveqBuffer, buffsize);
-		HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+		//HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
 		ulTaskNotifyTake( pdTRUE, xMaxBlockTime);
 
 		osDelay(1);
@@ -646,63 +667,57 @@ void StartAudioTask(void const * argument)
 * @retval None
 */
 /* USER CODE END Header_StartLoggerTask */
-void StartLoggerTask(void const * argument)
-{
-  /* USER CODE BEGIN StartLoggerTask */
+void StartLoggerTask(void const * argument) {
+	/* USER CODE BEGIN StartLoggerTask */
 
 	TickType_t times;
 	const TickType_t xDelay = 1000;
-	FIL logFile;
-	FRESULT res;
-	uint32_t byteswritten;
-	uint8_t wtext[16];
+
 	osDelay(5000); //wait for setup of environment
-  /* Infinite loop */
+	/* Infinite loop */
 	for (;;) {
 		times = xTaskGetTickCount();
+
 		if (!SDcardMounted) { //can't continue without a SD card
 			vTaskSuspend( NULL);
 		}
-		if (sensors.barotakeoff) {
-			//
 
-			sprintf(wtext,"Tick:%d\r\n",(int)xTaskGetTickCount());
+		if (activity.takeOff && !activity.isFlying) { //just log the start of the flight
+			activity.isLogging = 1;
+			if ( xSemaphoreTake(sdCardMutexHandle,
+					(TickType_t ) 600) == pdTRUE) {
+				writeFlightLogSummaryFile();
+				xSemaphoreGive(sdCardMutexHandle);
+			}
+
+		}
+
+		if (activity.isFlying) { //track logger
 
 			if ( xSemaphoreTake(sdCardMutexHandle,
 					(TickType_t ) 600) == pdTRUE) {
-
-				if (f_open(&logFile, "mylog.log",
-						FA_OPEN_APPEND | FA_WRITE) != FR_OK) {
-					/* 'STM32.TXT' file Open for write Error */
-					//Error_Handler();
-				} else {
-					/* Write data to the text file */
-					res = f_write(&logFile, wtext, sizeof(wtext),
-							(void *) &byteswritten);
-					//HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
-					if ((byteswritten == 0) || (res != FR_OK)) {
-						/* 'STM32.TXT' file Write or EOF Error */
-						//Error_Handler();
-					} else {
-						/* Close the open text file */
-						f_close(&logFile);
-
-					}
-
-				}
-
-				//TODO: try fsync
-
-				//f_mount(0, "0:", 1); //unmount SDCARD
-				//f_mount(&SDFatFS, SDPath, 0);
+				HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+				//TODO:writelog
 				xSemaphoreGive(sdCardMutexHandle);
 			}
-			//
+
 		}
+
+		if (activity.currentLogDataSet) { //all activity data is set
+			activity.isLogging = 0;
+			if ( xSemaphoreTake(sdCardMutexHandle,
+					(TickType_t ) 600) == pdTRUE) {
+				writeFlightLogSummaryFile();
+				xSemaphoreGive(sdCardMutexHandle);
+			}
+
+		}
+
+		//TODO: try fsync
 
 		vTaskDelayUntil(&times, xDelay);
 	}
-  /* USER CODE END StartLoggerTask */
+	/* USER CODE END StartLoggerTask */
 }
 
 /* Private application code --------------------------------------------------*/

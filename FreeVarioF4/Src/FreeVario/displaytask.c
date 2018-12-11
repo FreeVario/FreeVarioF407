@@ -379,7 +379,14 @@ void displayTaskUpdate(Paint *paint,EPD *epd, unsigned char * frame_buffer) {
 
     intTocharFloat(BmpTemp, sensors.temperature,100,1);
     Paint_Clear(paint, UNCOLORED);
-    Paint_DrawStringAt(paint, 0, 4, BmpTemp, &Font24, COLORED);
+
+    if (activity.isFlying) {
+    	Paint_DrawStringAt(paint, 0, 4,"Flying", &Font16, COLORED);
+    }else{
+    	Paint_DrawStringAt(paint, 0, 4,"Not Flying", &Font16, COLORED);
+    }
+
+
     EPD_SetFrameMemory(epd, frame_buffer, 8, 250, Paint_GetWidth(paint), Paint_GetHeight(paint));
 
 

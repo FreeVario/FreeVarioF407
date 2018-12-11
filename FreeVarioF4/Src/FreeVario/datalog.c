@@ -24,21 +24,20 @@ void writeFlightLogSummaryFile(){
 	uint32_t byteswritten;
 	uint8_t wtext[128];
 	char filename[32];
-	sprintf(filename,"%000000d.log",activity.currentLogID);
+	sprintf(filename,"%06d.log",activity.currentLogID);
 
 
 
-//lognr,starttime,startalt,temp,landingtime,landingalt,maxalt,maxaltgain,maxvario,maxsink,startlat,startlon,landinglat,landinglon
 
 	if (f_open(&logSumFile, filename,
-						FA_OPEN_APPEND | FA_WRITE) != FR_OK) {
+				FA_CREATE_ALWAYS | FA_WRITE) != FR_OK) {
 					/* 'STM32.TXT' file Open for write Error */
 					//Error_Handler();
 				} else {
 					/* Write data to the text file */
 
-					sprintf(wtext,"%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d",
-							activity.currentLogID,activity.takeoffTime,activity.takeoffTime,
+					sprintf(wtext,"%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d",
+							activity.currentLogID,activity.takeoffTime,activity.takeoffAltitude,
 							activity.takeoffTemp, activity.landingTime, activity.landingAltitude,
 							activity.MaxAltitudeMeters,activity.MaxAltitudeGainedMeters,
 							activity.MaxVarioMs,activity.MaxVarioSinkMs,

@@ -47,6 +47,7 @@ void readSensorsBMP280(BMP280_HandleTypedef *bmp280){
 
 	sensors.humidity = humidity;
 	sensors.temperature = temperature;
+	sensors.pressureraw = pressure;
 
 	//low pass filter
 	sensors.pressure = (conf.variosmooth * sensors.pressure + pressure) / (conf.variosmooth + 1);

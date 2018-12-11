@@ -23,7 +23,7 @@
 
 extern SensorData sensors;
 extern gps_t  hgps;
-
+extern ActivityData activity;
 //TODO: Fix compiler warning
 
 void displayTaskSetup(Paint *paint, EPD *epd, unsigned char * frame_buffer);
