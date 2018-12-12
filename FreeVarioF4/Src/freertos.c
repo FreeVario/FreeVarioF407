@@ -119,6 +119,7 @@ extern UART_HandleTypeDef huart3;
 extern char SDPath[4]; /* SD logical drive path */
 extern FATFS SDFatFS; /* File system object for SD logical drive */
 __IO uint8_t UserPowerButton = 0;
+__IO uint8_t UserOptButton = 0;
 uint8_t SDcardMounted = 0;
 
 
@@ -181,13 +182,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 		}
 	}else if (GPIO_Pin == OPTBUTTON_Pin) {
 
-		if(activity.takeOff){
-			activity.landed = 1;
-
-		}else{
-
-		   activity.takeOff = 1;
-		}
+		UserOptButton = 1;
 
 	}
 
@@ -370,7 +365,16 @@ void StartDefaultTask(void const * argument)
 			osDelay(4000);
 			StandbyMode();
 		}
+		if (UserOptButton) {
+			osDelay(10); //debouncer
+			UserOptButton = 0;
+			if (activity.takeOff) {
+				activity.landed = 1;
+			} else {
+				activity.takeOff = 1;
+			}
 
+		}
 
 		//Flight Operations
 
@@ -684,6 +688,7 @@ void StartLoggerTask(void const * argument) {
 
 		if (activity.takeOff && !activity.isFlying) { //just log the start of the flight
 			activity.isLogging = 1;
+			osDelay(1000); //wait to stabilize data
 			if ( xSemaphoreTake(sdCardMutexHandle,
 					(TickType_t ) 600) == pdTRUE) {
 				writeFlightLogSummaryFile();
