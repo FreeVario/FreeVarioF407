@@ -386,12 +386,12 @@ void StartDefaultTask(void const * argument)
 			activity.takeoffLocationLON=hgps.longitude;
 			activity.takeoffTemp = sensors.temperature;
 			activity.takeoffTime = hgps.date;
-
-			activity.currentLogDataSet = 0;
+			activity.currentLogDataIsSet = 0;
 			activity.isFlying = 1;
 		}
 
 		if(activity.isFlying){ //flying
+
 			if(sensors.AltitudeMeters > activity.MaxAltitudeMeters) activity.MaxAltitudeMeters = sensors.AltitudeMeters;
 			if(sensors.VarioMs > activity.MaxVarioMs) activity.MaxVarioMs = sensors.VarioMs;
 			if(sensors.VarioMs < activity.MaxVarioSinkMs) activity.MaxVarioSinkMs = sensors.VarioMs;
@@ -403,16 +403,13 @@ void StartDefaultTask(void const * argument)
 			activity.landingLocationLAT = hgps.latitude;
 			activity.landingLocationLON = hgps.longitude;
 			activity.MaxAltitudeGainedMeters = activity.MaxAltitudeMeters  - activity.takeoffAltitude;
-			activity.currentLogDataSet = 1;
+			activity.currentLogDataIsSet = 1;
 			activity.landed =0;
-			activity.takeOff =0;
 			activity.isFlying = 0;
-
-
-
 
 			conf.lastLogNumber = activity.currentLogID;
 
+			osDelay(200);
 		}
 
 		osDelay(100);
@@ -695,26 +692,32 @@ void StartLoggerTask(void const * argument) {
 			if ( xSemaphoreTake(sdCardMutexHandle,
 					(TickType_t ) 600) == pdTRUE) {
 				writeFlightLogSummaryFile();
+				osDelay(100);
 				if (openDataLogFile(&dataLogFile)) {
 					activity.isLogging = 1;
 				}
+
 				xSemaphoreGive(sdCardMutexHandle);
 			}
+
 		}
 
-		if (activity.isFlying) { //track logger
+		if (activity.isFlying ) { //track logger
 
-			if ( xSemaphoreTake(sdCardMutexHandle,
-					(TickType_t ) 600) == pdTRUE) {
+			if (activity.isLogging) {
 				HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
-				if(activity.isLogging){
-					 writeDataLogFile(&dataLogFile);
+				if ( xSemaphoreTake(sdCardMutexHandle,
+						(TickType_t ) 600) == pdTRUE) {
+
+					writeDataLogFile(&dataLogFile);
+
+
+					xSemaphoreGive(sdCardMutexHandle);
 				}
-				xSemaphoreGive(sdCardMutexHandle);
 			}
 		}
 
-		if (activity.currentLogDataSet) { //all activity data is set
+		if (activity.currentLogDataIsSet ) { //all activity data is set
 
 			if ( xSemaphoreTake(sdCardMutexHandle,
 					(TickType_t ) 600) == pdTRUE) {

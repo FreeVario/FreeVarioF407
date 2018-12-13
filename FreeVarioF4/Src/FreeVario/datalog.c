@@ -60,7 +60,7 @@ void writeFlightLogSummaryFile(){
 
 int openDataLogFile(FIL * logFile) {
 	char filename[32];
-	sprintf(filename,"%06d.log",activity.currentLogID);
+	sprintf(filename,"%06d.csv",activity.currentLogID);
 	if (f_open(logFile, filename,
 			FA_OPEN_APPEND | FA_WRITE) != FR_OK) {
 		return 1;
@@ -74,12 +74,34 @@ void writeDataLogFile(FIL * logFile) {
 	uint32_t byteswritten;
     uint8_t mtext[256];
 
-
     sprintf(mtext,"%d-%d-%d %d:%d:%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\r\n",
-    		hgps.year, hgps.month, hgps.date, hgps.hours, hgps.minutes, hgps.seconds,
-			activity.currentLogID, hgps.fix,hgps.is_valid,hgps.latitude,hgps.longitude,hgps.coarse,hgps.speed,hgps.variation,hgps.sats_in_use,
-			sensors.AltitudeMeters,sensors.VarioMs,sensors.accel_x,sensors.accel_y,sensors.accel_z,sensors.gyro_x,sensors.gyro_y,sensors.gyro_z,
-			sensors.temperature,sensors.humidity,sensors.pressure,sensors.pressureraw);
+    		hgps.year,
+			hgps.month,
+			hgps.date,
+			hgps.hours,
+			hgps.minutes,
+			hgps.seconds,
+			activity.currentLogID,
+			hgps.fix,
+			hgps.is_valid,
+			hgps.latitude*1000,
+			hgps.longitude*1000,
+			hgps.coarse,
+			hgps.speed*1000,
+			hgps.variation,
+			hgps.sats_in_use,
+			sensors.AltitudeMeters,
+			sensors.VarioMs,
+			sensors.accel_x,
+			sensors.accel_y,
+			sensors.accel_z,
+			sensors.gyro_x,
+			sensors.gyro_y,
+			sensors.gyro_z,
+			sensors.temperature,
+			sensors.humidity,
+			sensors.pressure,
+			sensors.pressureraw);
 
 	f_write(logFile, mtext, strlen(mtext),(void *) &byteswritten);
 	f_sync(logFile);

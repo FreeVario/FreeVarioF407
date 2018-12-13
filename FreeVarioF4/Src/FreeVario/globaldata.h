@@ -48,7 +48,7 @@ typedef struct {
 	int32_t MaxVarioMs;
 	int32_t MaxVarioSinkMs;
 	int32_t currentLogID;
-	uint8_t currentLogDataSet;
+	uint8_t currentLogDataIsSet;
 }ActivityData;
 
 #endif /* GLOBALDATA_H_ */
