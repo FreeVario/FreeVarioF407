@@ -24,11 +24,8 @@ void writeFlightLogSummaryFile(){
 	uint32_t byteswritten;
 	uint8_t wtext[128];
 	char filename[32];
+
 	sprintf(filename,"%06d.log",activity.currentLogID);
-
-
-
-
 	if (f_open(&logSumFile, filename,
 				FA_CREATE_ALWAYS | FA_WRITE) != FR_OK) {
 					/* 'STM32.TXT' file Open for write Error */
@@ -36,15 +33,13 @@ void writeFlightLogSummaryFile(){
 				} else {
 					/* Write data to the text file */
 
-					sprintf(wtext,"%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d",
+					sprintf(wtext,"%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\r\n",
 							activity.currentLogID,activity.takeoffTime,activity.takeoffAltitude,
 							activity.takeoffTemp, activity.landingTime, activity.landingAltitude,
 							activity.MaxAltitudeMeters,activity.MaxAltitudeGainedMeters,
 							activity.MaxVarioMs,activity.MaxVarioSinkMs,
 							activity.takeoffLocationLAT, activity.takeoffLocationLON,
 							activity.landingLocationLAT,activity.landingLocationLON);
-
-
 
 					res = f_write(&logSumFile, wtext, strlen(wtext),
 							(void *) &byteswritten);
@@ -62,3 +57,38 @@ void writeFlightLogSummaryFile(){
 
 
 }
+
+int openDataLogFile(FIL * logFile) {
+	char filename[32];
+	sprintf(filename,"%06d.log",activity.currentLogID);
+	if (f_open(logFile, filename,
+			FA_OPEN_APPEND | FA_WRITE) != FR_OK) {
+		return 1;
+	}
+
+	return 0;
+
+}
+
+void writeDataLogFile(FIL * logFile) {
+	uint32_t byteswritten;
+    uint8_t mtext[256];
+
+
+    sprintf(mtext,"%d-%d-%d %d:%d:%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\r\n",
+    		hgps.year, hgps.month, hgps.date, hgps.hours, hgps.minutes, hgps.seconds,
+			activity.currentLogID, hgps.fix,hgps.is_valid,hgps.latitude,hgps.longitude,hgps.coarse,hgps.speed,hgps.variation,hgps.sats_in_use,
+			sensors.AltitudeMeters,sensors.VarioMs,sensors.accel_x,sensors.accel_y,sensors.accel_z,sensors.gyro_x,sensors.gyro_y,sensors.gyro_z,
+			sensors.temperature,sensors.humidity,sensors.pressure,sensors.pressureraw);
+
+	f_write(logFile, mtext, strlen(mtext),(void *) &byteswritten);
+	f_sync(logFile);
+}
+
+
+void closeDataLogFile(FIL * logFile) {
+	f_close(logFile);
+}
+
+
+

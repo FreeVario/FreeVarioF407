@@ -66,6 +66,7 @@
 #include <string.h>
 #include "nmea.h"
 #include "usbd_cdc_if.h"
+#include "datalog.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -366,13 +367,14 @@ void StartDefaultTask(void const * argument)
 			StandbyMode();
 		}
 		if (UserOptButton) {
-			osDelay(10); //debouncer
-			UserOptButton = 0;
+			osDelay(30); //debouncer
+
 			if (activity.takeOff) {
 				activity.landed = 1;
 			} else {
 				activity.takeOff = 1;
 			}
+			UserOptButton = 0;
 
 		}
 
@@ -676,6 +678,7 @@ void StartLoggerTask(void const * argument) {
 
 	TickType_t times;
 	const TickType_t xDelay = 1000;
+	FIL dataLogFile;
 
 	osDelay(5000); //wait for setup of environment
 	/* Infinite loop */
@@ -687,14 +690,16 @@ void StartLoggerTask(void const * argument) {
 		}
 
 		if (activity.takeOff && !activity.isFlying) { //just log the start of the flight
-			activity.isLogging = 1;
+
 			osDelay(1000); //wait to stabilize data
 			if ( xSemaphoreTake(sdCardMutexHandle,
 					(TickType_t ) 600) == pdTRUE) {
 				writeFlightLogSummaryFile();
+				if (openDataLogFile(&dataLogFile)) {
+					activity.isLogging = 1;
+				}
 				xSemaphoreGive(sdCardMutexHandle);
 			}
-
 		}
 
 		if (activity.isFlying) { //track logger
@@ -702,23 +707,26 @@ void StartLoggerTask(void const * argument) {
 			if ( xSemaphoreTake(sdCardMutexHandle,
 					(TickType_t ) 600) == pdTRUE) {
 				HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
-				//TODO:writelog
+				if(activity.isLogging){
+					 writeDataLogFile(&dataLogFile);
+				}
 				xSemaphoreGive(sdCardMutexHandle);
 			}
-
 		}
 
 		if (activity.currentLogDataSet) { //all activity data is set
-			activity.isLogging = 0;
+
 			if ( xSemaphoreTake(sdCardMutexHandle,
 					(TickType_t ) 600) == pdTRUE) {
+				if(activity.isLogging){
+					activity.isLogging = 0;
+					closeDataLogFile(&dataLogFile);
+				}
 				writeFlightLogSummaryFile();
 				xSemaphoreGive(sdCardMutexHandle);
 			}
-
 		}
 
-		//TODO: try fsync
 
 		vTaskDelayUntil(&times, xDelay);
 	}
