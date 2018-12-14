@@ -93,6 +93,7 @@ unsigned char * frame_buffer[EPD_WIDTH * EPD_HEIGHT / 8] __attribute__((section(
 Paint  paint __attribute__((section(".ccmram")));
 SensorData sensors __attribute__((section(".ccmram")));
 ActivityData activity __attribute__((section(".ccmram")));
+DataLog datalog __attribute__((section(".ccmram")));
 gps_t  hgps __attribute__((section(".ccmram")));
 settings_t conf __attribute__((section(".ccmram")));
 uint8_t nmeasendbuffer[SENDBUFFER] __attribute__((section(".ccmram")));
@@ -100,10 +101,10 @@ uint8_t nmeasendbuffer[SENDBUFFER] __attribute__((section(".ccmram")));
 
 /* FV Task allocation----------------------------------------------------------*/
 
-TaskHandle_t xTaskToNotify = NULL;
+TaskHandle_t xReceiveNotify = NULL;
 TaskHandle_t xSendDataNotify = NULL;
 TaskHandle_t xDisplayNotify = NULL;
-
+TaskHandle_t xLogDataNotify = NULL;
 
 /* FV Queues  -----------------------------------------------------------------*/
 
@@ -134,7 +135,6 @@ osThreadId audioTaskHandle;
 osThreadId loggerTaskHandle;
 osMutexId confMutexHandle;
 osMutexId sdCardMutexHandle;
-osMutexId activityMutexHandle;
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -143,9 +143,9 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *UartHandle) {
 
 
 	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-	vTaskNotifyGiveFromISR(xTaskToNotify, &xHigherPriorityTaskWoken);
+	vTaskNotifyGiveFromISR(xReceiveNotify, &xHigherPriorityTaskWoken);
 
-	xTaskToNotify = NULL;
+	xReceiveNotify = NULL;
 	portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 
 }
@@ -261,10 +261,6 @@ void MX_FREERTOS_Init(void) {
   osMutexDef(sdCardMutex);
   sdCardMutexHandle = osMutexCreate(osMutex(sdCardMutex));
 
-  /* definition and creation of activityMutex */
-  osMutexDef(activityMutex);
-  activityMutexHandle = osMutexCreate(osMutex(activityMutex));
-
   /* USER CODE BEGIN RTOS_MUTEX */
 	/* add mutexes, ... */
   /* USER CODE END RTOS_MUTEX */
@@ -337,7 +333,9 @@ void StartDefaultTask(void const * argument)
 	//BSP_SD_Init();
   xSemaphoreGive(confMutexHandle);
   xSemaphoreGive(sdCardMutexHandle);
-  xSemaphoreGive(activityMutexHandle);
+
+
+  uint8_t switchs=0;
 
   memset(&activity, 0, sizeof(activity));
 
@@ -367,49 +365,60 @@ void StartDefaultTask(void const * argument)
 			StandbyMode();
 		}
 		if (UserOptButton) {
-			osDelay(30); //debouncer
 
-			if (activity.takeOff) {
+			osDelay(10); //debouncer
+
+
+			if (switchs) {
 				activity.landed = 1;
+				switchs=0;
 			} else {
+				switchs =1;
 				activity.takeOff = 1;
 			}
+
 			UserOptButton = 0;
 
 		}
 
 		//Flight Operations
 
-		if(activity.takeOff && !activity.isFlying)  { //took off
-			activity.currentLogID = conf.lastLogNumber + 1;
-			activity.takeoffLocationLAT = hgps.latitude;
-			activity.takeoffLocationLON=hgps.longitude;
-			activity.takeoffTemp = sensors.temperature;
-			activity.takeoffTime = hgps.date;
-			activity.currentLogDataIsSet = 0;
-			activity.isFlying = 1;
+		if (activity.takeOff && !activity.isFlying) { //took off
+
+				activity.currentLogID = conf.lastLogNumber + 1;
+				activity.takeoffLocationLAT = hgps.latitude;
+				activity.takeoffLocationLON = hgps.longitude;
+				activity.takeoffTemp = sensors.temperature;
+				activity.takeoffTime = hgps.date;
+				activity.isFlying = 1;
+
+			xTaskNotify(xLogDataNotify, 0x01, eSetValueWithOverwrite);
 		}
 
-		if(activity.isFlying){ //flying
+		if (activity.isFlying) { //flying
 
-			if(sensors.AltitudeMeters > activity.MaxAltitudeMeters) activity.MaxAltitudeMeters = sensors.AltitudeMeters;
-			if(sensors.VarioMs > activity.MaxVarioMs) activity.MaxVarioMs = sensors.VarioMs;
-			if(sensors.VarioMs < activity.MaxVarioSinkMs) activity.MaxVarioSinkMs = sensors.VarioMs;
+				if (sensors.AltitudeMeters > activity.MaxAltitudeMeters)
+					activity.MaxAltitudeMeters = sensors.AltitudeMeters;
+				if (sensors.VarioMs > activity.MaxVarioMs)
+					activity.MaxVarioMs = sensors.VarioMs;
+				if (sensors.VarioMs < activity.MaxVarioSinkMs)
+					activity.MaxVarioSinkMs = sensors.VarioMs;
 
 		}
 
 		if (activity.landed) {
-			activity.landingAltitude = sensors.AltitudeMeters;
-			activity.landingLocationLAT = hgps.latitude;
-			activity.landingLocationLON = hgps.longitude;
-			activity.MaxAltitudeGainedMeters = activity.MaxAltitudeMeters  - activity.takeoffAltitude;
-			activity.currentLogDataIsSet = 1;
-			activity.landed =0;
-			activity.isFlying = 0;
 
-			conf.lastLogNumber = activity.currentLogID;
+				activity.landingAltitude = sensors.AltitudeMeters;
+				activity.landingLocationLAT = hgps.latitude;
+				activity.landingLocationLON = hgps.longitude;
+				activity.MaxAltitudeGainedMeters = activity.MaxAltitudeMeters - activity.takeoffAltitude;
+				activity.landed = 0;
+				activity.isFlying = 0;
+				activity.takeOff = 0;
+				conf.lastLogNumber = activity.currentLogID;
 
-			osDelay(200);
+			xTaskNotify(xLogDataNotify, 0x03, eSetValueWithOverwrite);
+
 		}
 
 		osDelay(100);
@@ -429,11 +438,12 @@ void StartDisplayTask(void const * argument)
   /* USER CODE BEGIN StartDisplayTask */
 	//unsigned char * frame_buffer = (unsigned char*)malloc(EPD_WIDTH * EPD_HEIGHT / 8);
 	memset(frame_buffer , 0, EPD_WIDTH * EPD_HEIGHT / 8);
+	configASSERT(xDisplayNotify == NULL);
 	uint32_t ulNotifiedValue;
 	BaseType_t xResult;
 	 TickType_t xMaxBlockTime;
 	 TickType_t times;
-	 activity.currentLogID = 1;
+	 xDisplayNotify = xTaskGetCurrentTaskHandle();
 		EPD epd;
 		displayTaskSetup(&paint,&epd, frame_buffer);
 
@@ -443,7 +453,7 @@ void StartDisplayTask(void const * argument)
 		times = xTaskGetTickCount();
 		 displayTaskUpdate(&paint,&epd,frame_buffer);
 
-		 xDisplayNotify = xTaskGetCurrentTaskHandle();
+
 		 TickType_t waittime = abs( 500 - (xTaskGetTickCount() - times) ) ;
 		 if (waittime > 500) waittime = 500;
 		 xMaxBlockTime = pdMS_TO_TICKS(waittime);
@@ -455,13 +465,13 @@ void StartDisplayTask(void const * argument)
 		 if( xResult == pdPASS )
 		      {
 		         /* A notification was received.  See which bits were set. */
-		         if( ( ulNotifiedValue & 0x01 ) != 0 )
+		         if(  ulNotifiedValue == 1 )
 		         {
 		        	 displayMessageShutdown(&paint,&epd,frame_buffer);
 		        	 osDelay(4000); //just sleep till shutdown
 		         }
 
-		         if( ( ulNotifiedValue & 0x02 ) != 0 )
+		         if(  ulNotifiedValue == 2 )
 		         {
 
 		         }
@@ -488,7 +498,8 @@ void StartSensorsTask(void const * argument)
 	uint8_t timetosend = 1;
 	BMP280_HandleTypedef bmp280;
 	SD_MPU6050 mpu1;
-	 memset(&sensors, 0, sizeof(sensors));
+	memset(&sensors, 0, sizeof(sensors));
+
 
 	sensors.humidity = 0;
 	sensors.pressure = 0;
@@ -559,7 +570,7 @@ void StartGPSTask(void const * argument)
 	gps_init(&hgps);
 	uint8_t buffer[SENDBUFFER]; //DMA buffer can't use ccm
 	uint8_t rcvdCount;
-	configASSERT(xTaskToNotify == NULL);
+	configASSERT(xReceiveNotify == NULL);
 	__HAL_UART_ENABLE_IT(&huart3, UART_IT_IDLE);
 
 	/* Infinite loop */
@@ -571,7 +582,7 @@ void StartGPSTask(void const * argument)
 		if (HAL_UART_Receive_DMA(&huart3, buffer, sizeof(buffer)) != HAL_OK) {
 			// error
 		}
-		xTaskToNotify = xTaskGetCurrentTaskHandle();
+		xReceiveNotify = xTaskGetCurrentTaskHandle();
 		ulTaskNotifyTake( pdTRUE, portMAX_DELAY);
 
 		rcvdCount = sizeof(buffer) - huart3.hdmarx->Instance->NDTR;
@@ -603,7 +614,7 @@ void StartSendDataTask(void const * argument)
 
 		xQueueReceive(uartQueueHandle, &receiveqBuffer, portMAX_DELAY);
 		uint16_t buffsize = strlen((char *) receiveqBuffer);
-
+//TODO: move outside loop
 		xSendDataNotify = xTaskGetCurrentTaskHandle();
 
 		HAL_UART_Transmit_DMA(&huart1, (uint8_t *) &receiveqBuffer, buffsize); //Usart global interupt must be enabled for this to work
@@ -670,70 +681,97 @@ void StartAudioTask(void const * argument)
 * @retval None
 */
 /* USER CODE END Header_StartLoggerTask */
-void StartLoggerTask(void const * argument) {
-	/* USER CODE BEGIN StartLoggerTask */
+void StartLoggerTask(void const * argument)
+{
+  /* USER CODE BEGIN StartLoggerTask */
 
 	TickType_t times;
 	const TickType_t xDelay = 1000;
 	FIL dataLogFile;
-
-	osDelay(5000); //wait for setup of environment
+	uint32_t ulNotifiedValue;
+	BaseType_t xResult;
+	TickType_t xMaxBlockTime;
+	configASSERT(xLogDataNotify == NULL);
+	xLogDataNotify = xTaskGetCurrentTaskHandle();
+	datalog.isLogging=0;
+	osDelay(20000); //wait for setup of environment
 	/* Infinite loop */
 	for (;;) {
+
+
 		times = xTaskGetTickCount();
 
 		if (!SDcardMounted) { //can't continue without a SD card
+			xLogDataNotify = NULL;
 			vTaskSuspend( NULL);
 		}
 
-		if (activity.takeOff && !activity.isFlying) { //just log the start of the flight
+		xMaxBlockTime = pdMS_TO_TICKS(500);
 
-			osDelay(1000); //wait to stabilize data
-			if ( xSemaphoreTake(sdCardMutexHandle,
-					(TickType_t ) 600) == pdTRUE) {
-				writeFlightLogSummaryFile();
-				osDelay(100);
-				if (openDataLogFile(&dataLogFile)) {
-					activity.isLogging = 1;
-				}
+		xResult = xTaskNotifyWait( pdFALSE, /* Don't clear bits on entry. */
+		pdTRUE, /* Clear all bits on exit. */
+		&ulNotifiedValue, /* Stores the notified value. */
+		xMaxBlockTime);
 
-				xSemaphoreGive(sdCardMutexHandle);
-			}
+		if (xResult == pdPASS) {
+			/* A notification was received.  See which bits were set. */
+			if (ulNotifiedValue == 1) { //started
 
-		}
-
-		if (activity.isFlying ) { //track logger
-
-			if (activity.isLogging) {
-				HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+				osDelay(200); //wait to stabilize data
 				if ( xSemaphoreTake(sdCardMutexHandle,
 						(TickType_t ) 600) == pdTRUE) {
+					writeFlightLogSummaryFile();
+					osDelay(100);
+					uint8_t devnotready = 1;
+					uint8_t timeout=0;
 
-					writeDataLogFile(&dataLogFile);
+					while (devnotready) {
+						osDelay(500);
+						timeout++;
+						if(openDataLogFile(&dataLogFile)) {
+							datalog.isLogging = 1;
+							devnotready = 0;
+						}
+						if (timeout > 1000) devnotready = 0;
+					}
 
+					xSemaphoreGive(sdCardMutexHandle);
+				}
+			}
 
+			if (ulNotifiedValue  == 2) { //flying
+
+			}
+
+			if (ulNotifiedValue == 3) { //landed
+				if ( xSemaphoreTake(sdCardMutexHandle,
+						(TickType_t ) 600) == pdTRUE) {
+					if (datalog.isLogging) {
+
+						datalog.isLogging = 0;
+						closeDataLogFile(&dataLogFile);
+					}
+					writeFlightLogSummaryFile();
 					xSemaphoreGive(sdCardMutexHandle);
 				}
 			}
 		}
 
-		if (activity.currentLogDataIsSet ) { //all activity data is set
+		if (datalog.isLogging) {
 
 			if ( xSemaphoreTake(sdCardMutexHandle,
 					(TickType_t ) 600) == pdTRUE) {
-				if(activity.isLogging){
-					activity.isLogging = 0;
-					closeDataLogFile(&dataLogFile);
-				}
-				writeFlightLogSummaryFile();
+				HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+				writeDataLogFile(&dataLogFile);
 				xSemaphoreGive(sdCardMutexHandle);
 			}
 		}
-
-
 		vTaskDelayUntil(&times, xDelay);
 	}
-	/* USER CODE END StartLoggerTask */
+
+
+
+  /* USER CODE END StartLoggerTask */
 }
 
 /* Private application code --------------------------------------------------*/

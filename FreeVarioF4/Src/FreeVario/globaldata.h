@@ -42,13 +42,18 @@ typedef struct {
 	uint8_t takeOff;
 	uint8_t isFlying;
 	uint8_t landed;
-	uint8_t isLogging;
 	int32_t MaxAltitudeMeters;
 	int32_t MaxAltitudeGainedMeters;
 	int32_t MaxVarioMs;
 	int32_t MaxVarioSinkMs;
 	int32_t currentLogID;
-	uint8_t currentLogDataIsSet;
+
 }ActivityData;
+
+typedef struct {
+	uint8_t isLogging;
+}DataLog;
+
+
 
 #endif /* GLOBALDATA_H_ */
