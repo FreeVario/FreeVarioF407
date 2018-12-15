@@ -58,23 +58,37 @@ void writeFlightLogSummaryFile(){
 
 }
 
-int openDataLogFile(FIL * logFile) {
+int openDataLogFile(FIL* logFile) {
 	char filename[32];
+	uint32_t byteswritten=0;
+
 	sprintf(filename,"%06d.csv",activity.currentLogID);
 	if (f_open(logFile, filename,
 			FA_OPEN_APPEND | FA_WRITE) != FR_OK) {
-		return 1;
+		return 0;
 	}
 
-	return 0;
+	uint8_t header[] = "Date,Log,GPS Fix, GPS Valid,Latitude,Logitude, GPS Altitude,Coarse,Speed,Variation,Sats in use, Baro Altitude, Vario,"
+			"Accel X,Accel Y, Accel Z, Gyro X, Gyro Y, Gyro Z, Temperature, Humidity, Pressure, Pressure Raw \r\n";
+	f_write(logFile, header, strlen(header),(void *) &byteswritten);
+		f_sync(logFile);
+	return 1;
 
 }
 
-void writeDataLogFile(FIL * logFile) {
-	uint32_t byteswritten;
+void writeDataLogFile(FIL *logFile) {
+	uint32_t byteswritten=0;
     uint8_t mtext[256];
+	char filename[32];
+//	FIL  logFile;
 
-    sprintf(mtext,"%d-%d-%d %d:%d:%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\r\n",
+	sprintf(filename,"%06d.csv",activity.currentLogID);
+//	if (f_open(&logFile, filename,
+//			FA_OPEN_APPEND | FA_WRITE) != FR_OK) {
+//		return;
+//	}
+
+    sprintf(mtext,"%d-%d-%d %d:%d:%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\r\n",
     		hgps.year,
 			hgps.month,
 			hgps.date,
@@ -86,6 +100,7 @@ void writeDataLogFile(FIL * logFile) {
 			hgps.is_valid,
 			hgps.latitude*1000,
 			hgps.longitude*1000,
+			hgps.altitude*1000,
 			hgps.coarse,
 			hgps.speed*1000,
 			hgps.variation,
@@ -105,10 +120,11 @@ void writeDataLogFile(FIL * logFile) {
 
 	f_write(logFile, mtext, strlen(mtext),(void *) &byteswritten);
 	f_sync(logFile);
+//	f_close(&logFile);
 }
 
 
-void closeDataLogFile(FIL * logFile) {
+void closeDataLogFile(FIL *logFile) {
 	f_close(logFile);
 }
 

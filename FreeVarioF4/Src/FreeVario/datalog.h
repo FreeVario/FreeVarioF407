@@ -16,7 +16,7 @@ extern gps_t  hgps;
 extern SensorData sensors;
 void writeFlightLogSummaryFile();
 int openDataLogFile(FIL * logFile);
-void writeDataLogFile(FIL * logFile);
-void closeDataLogFile(FIL * logFile);
+void writeDataLogFile(FIL  * logFile);
+void closeDataLogFile(FIL  * logFile);
 
 #endif /* DATALOG_H_ */

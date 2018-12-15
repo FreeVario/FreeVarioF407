@@ -299,7 +299,7 @@ void MX_FREERTOS_Init(void) {
   audioTaskHandle = osThreadCreate(osThread(audioTask), NULL);
 
   /* definition and creation of loggerTask */
-  osThreadDef(loggerTask, StartLoggerTask, osPriorityNormal, 0, 1024);
+  osThreadDef(loggerTask, StartLoggerTask, osPriorityNormal, 0, 2048);
   loggerTaskHandle = osThreadCreate(osThread(loggerTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
@@ -687,14 +687,14 @@ void StartLoggerTask(void const * argument)
 
 	TickType_t times;
 	const TickType_t xDelay = 1000;
-	FIL dataLogFile;
+	FIL  dataLogFile;
 	uint32_t ulNotifiedValue;
 	BaseType_t xResult;
 	TickType_t xMaxBlockTime;
 	configASSERT(xLogDataNotify == NULL);
 	xLogDataNotify = xTaskGetCurrentTaskHandle();
 	datalog.isLogging=0;
-	osDelay(20000); //wait for setup of environment
+	osDelay(4000); //wait for setup of environment
 	/* Infinite loop */
 	for (;;) {
 
@@ -724,15 +724,16 @@ void StartLoggerTask(void const * argument)
 					osDelay(100);
 					uint8_t devnotready = 1;
 					uint8_t timeout=0;
-
+					//openDataLogFile(&dataLogFile);
 					while (devnotready) {
-						osDelay(500);
+
 						timeout++;
 						if(openDataLogFile(&dataLogFile)) {
 							datalog.isLogging = 1;
 							devnotready = 0;
 						}
-						if (timeout > 1000) devnotready = 0;
+						osDelay(2000);
+						if (timeout > 2) devnotready = 0;
 					}
 
 					xSemaphoreGive(sdCardMutexHandle);
@@ -763,6 +764,7 @@ void StartLoggerTask(void const * argument)
 					(TickType_t ) 600) == pdTRUE) {
 				HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
 				writeDataLogFile(&dataLogFile);
+
 				xSemaphoreGive(sdCardMutexHandle);
 			}
 		}
