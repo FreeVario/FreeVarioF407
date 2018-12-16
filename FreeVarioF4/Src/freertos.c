@@ -386,8 +386,8 @@ void StartDefaultTask(void const * argument)
 		if (activity.takeOff && !activity.isFlying) { //took off
 
 				activity.currentLogID = conf.lastLogNumber + 1;
-				activity.takeoffLocationLAT = hgps.latitude;
-				activity.takeoffLocationLON = hgps.longitude;
+				activity.takeoffLocationLAT = (int32_t)(hgps.latitude*1000000);
+				activity.takeoffLocationLON = (int32_t)(hgps.longitude*1000000);
 				activity.takeoffTemp = sensors.temperature;
 				activity.takeoffTime = hgps.date;
 				activity.isFlying = 1;
@@ -409,8 +409,8 @@ void StartDefaultTask(void const * argument)
 		if (activity.landed) {
 
 				activity.landingAltitude = sensors.AltitudeMeters;
-				activity.landingLocationLAT = hgps.latitude;
-				activity.landingLocationLON = hgps.longitude;
+				activity.landingLocationLAT = (int32_t)(hgps.latitude*1000000);
+				activity.landingLocationLON = (int32_t)(hgps.longitude*1000000);
 				activity.MaxAltitudeGainedMeters = activity.MaxAltitudeMeters - activity.takeoffAltitude;
 				activity.landed = 0;
 				activity.isFlying = 0;

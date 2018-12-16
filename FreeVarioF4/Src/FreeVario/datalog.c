@@ -78,7 +78,7 @@ int openDataLogFile(FIL* logFile) {
 
 void writeDataLogFile(FIL *logFile) {
 	uint32_t byteswritten=0;
-    uint8_t mtext[256];
+    uint8_t  mtext[256];
 	char filename[32];
 //	FIL  logFile;
 
@@ -88,22 +88,22 @@ void writeDataLogFile(FIL *logFile) {
 //		return;
 //	}
 
-    sprintf(mtext,"%d-%d-%d %d:%d:%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\r\n",
-    		hgps.year,
-			hgps.month,
+    sprintf(mtext,"%u-%02u-%02u %02u:%02u:%02u,%ld,%u,%u,%ld,%ld,%ld,%ld,%ld,%ld,%u,%ld,%ld,%d,%d,%d,%d,%d,%d,%d,%u,%lu,%lu\r\n",
 			hgps.date,
+			hgps.month,
+			hgps.year,
 			hgps.hours,
 			hgps.minutes,
 			hgps.seconds,
 			activity.currentLogID,
 			hgps.fix,
 			hgps.is_valid,
-			hgps.latitude*1000,
-			hgps.longitude*1000,
-			hgps.altitude*1000,
-			hgps.coarse,
-			hgps.speed*1000,
-			hgps.variation,
+			(int32_t)(hgps.latitude*1000000),
+			(int32_t)(hgps.longitude*1000000),
+			(int32_t)(hgps.altitude*1000),
+			(int32_t)(hgps.coarse*1000),
+			(int32_t)(hgps.speed*1000),
+			(int32_t)(hgps.variation*1000),
 			hgps.sats_in_use,
 			sensors.AltitudeMeters,
 			sensors.VarioMs,
