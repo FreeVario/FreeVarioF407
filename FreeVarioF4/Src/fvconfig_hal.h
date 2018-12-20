@@ -61,11 +61,11 @@
 #define FV_UARTBT huart1
 
 
-//HW DAC output for the speaker
-#define FV_DACTMR htim6
-#define FV_DACHALTMR TIM6
-#define FV_DAC hdac
-#define FV_DAC_CHANNEL DAC_CHANNEL_1
+//HW output for the speaker
+#define FV_TONETMR htim2
+#define FV_TONECHN TIM_CHANNEL_1
+#define FV_TONECCR CCR1
+#define FV_TONEHALTMR TIM2
 
 
 //Old gpio input format for DHT sensors, not implemented yet (might never be)
